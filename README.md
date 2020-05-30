@@ -1,5 +1,5 @@
-# Bayesian Probabilistic Numerical Integration with Tree Based Models
-Bayesian Probabilistic Numerical Integration with Tree Based models (under review)
+# Bayesian Probabilistic Numerical Integration with Tree-Based Models
+Bayesian Probabilistic Numerical Integration with Tree-Based models (under review)
 
 Authors: Harrison Zhu, Briol F-X, Xing Liu, Ruya Kang, Zhichao Shen, and Seth Flaxman
 
