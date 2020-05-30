@@ -4,8 +4,8 @@ library(data.tree)
 library(matrixStats)
 library(caret)
 set.seed(0)
-source("src/meanPopulationStudy/bartMean.R")
-source("src/meanPopulationStudy/gpMean.R")
+source("src/survey_design/bartMean.R")
+source("src/survey_design/gpMean.R")
 source("src/optimise_gp.R")
 
 # paths to save results and plots

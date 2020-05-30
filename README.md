@@ -45,8 +45,9 @@ Authors: Harrison Zhu, Briol F-X, Xing Liu, Ruya Kang, Zhichao Shen, and Seth Fl
             ├───├bartMean.R
             ├───├gpMean.R
     ├───├integrationMain.R: Main class to do BART-Int, GPBQ and Monte Carlo integrations. Tweak your genz functions and parameters here
-    ├───├poptMean_trained_bin.R: 
-    ├───├saveComputeIntegrals.R: 
+    ├───├poptMean_trained_bin.R: computes the ground truth proportions for the survey design problem
+    ├───├saveComputeIntegrals.R: computes the exact integrals for the genz functions
+    ├───├bart_compute_groundtruth.R: computes the ground truth for the survey design
 
 ## Dependencies
 
