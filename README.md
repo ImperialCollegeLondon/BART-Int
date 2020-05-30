@@ -65,7 +65,6 @@ The experiments are tested under Ubuntu18.04 and OSX. Docker images will be publ
 
 `R` dependencies.
 ```r
-    yaml
     MASS
     cubature
     lhs
@@ -94,7 +93,7 @@ gpytorch
 1) Install all the necessary packages
 
 ```r
-install.packages(c("yaml", "MASS", "cubature", "lhs", "data.tree", "matrixStats", "mvtnorm", "doParallel", "kernlab", "msm", "MCMCglmm", "caret", "reticulate", "rdist"))
+install.packages(c("MASS", "cubature", "lhs", "data.tree", "matrixStats", "mvtnorm", "doParallel", "kernlab", "msm", "MCMCglmm", "caret", "reticulate", "rdist"))
 
 # an old version of dbarts
 packageurl <- "https://cran.r-project.org/src/contrib/Archive/dbarts/dbarts_0.9-8.tar.gz"
