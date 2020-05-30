@@ -159,10 +159,6 @@ This will generate and store the results in `results/survey_design` and `Figures
 
 *Note that the experiments can also be easily run using other BART packages such as `BART` or `bartMachine`, provided that `src/survey_design/bartMean.R` is edited so that `dbarts::bart` is replaced*
 
-## Docker
-
-To be added
-
 ## License
 MIT License
 
