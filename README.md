@@ -124,7 +124,29 @@ Rscript integrationMain.R 1 2 1 matern32 1 uniform 1 1
 ```
 and get results for the continuous function, 2 iterations of sequential design, 1 dimension, matern32 kernel, 1 meaning with sequential design, uniform measure, 1 as a placeholder for the argument involving the number of jumps for a step function, and 1 to indicate whether to save the BART posterior samples at each iteration. For more information, check the first few lines of `integrationMain.R`.
 
-Results will also be stored in `results/genz` and `Figures/genz`.
+Results will also be stored in `results/genz` and `Figures/genz`.]
+
+We ran the following to generate the results for Table 1
+```
+for dim in 1 10
+    do
+        for genz in 1 2 3 4 5 6 7
+            do
+                Rscript integrationMain.R $dim 20 $genz matern32 uniform 1 1 1
+        done
+done
+```
+Although you can also rewrite `integrationMain.R` to parallelise each seed.
+
+For Table 2
+```
+for dim in 1 10 20 100
+    do
+        Rscript test_additive.R $dim 1 9 matern32 uniform 0
+done
+```
+
+As for the graphs, we provide the scripts in `figures_code`.
 
 **Navigating the results**
 Check the [Genz Functions](https://www.sfu.ca/~ssurjano/integration.html) and see the preprint for more information.
@@ -168,6 +190,15 @@ For example, we used `num_new_surveys=200, num_data=10000, num_design=20`.
 This will generate and store the results in `results/survey_design` and `Figures/survey_design`, where you can find the `.csv` and `.RData` files containing the numerical values and the automatically generated graphs.
 
 *Note that the experiments can also be easily run using other BART packages such as `BART` or `bartMachine`, provided that `src/survey_design/bartMean.R` is edited so that `dbarts::bart` is replaced*
+
+To get the results for Table 3 
+```
+for num_cv in $(seq 1 20)
+    do
+    echo $num_cv
+    Rscript src/meanPopulationStudy/poptMean_trained_bin.R 200 $num_cv $num_cv 10000 20 
+done
+```
 
 ## License
 MIT License
