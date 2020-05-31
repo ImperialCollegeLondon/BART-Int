@@ -1,7 +1,7 @@
-# Bayesian Probabilistic Numerical Integration with Tree Based Models
-Bayesian Probabilistic Numerical Integration with Tree Based models (under review)
+# Bayesian Probabilistic Numerical Integration with Tree-Based Models
+Bayesian Probabilistic Numerical Integration with Tree-Based models (under review)
 
-Authors: Harrison Zhu, Briol F-X, Xing Liu, Ruya Kang, Zhichao Shen, and Seth Flaxman
+Authors: Harrison Zhu, François-Xavier Briol, Xing Liu, Ruya Kang, Zhichao Shen, and Seth Flaxman
 
 ## Code directory ##
 
@@ -179,7 +179,7 @@ Rscript bart_compute_groundtruth.R num_cv_start num_cv_end num_data num_design 1
 ```
 where `num_cv_start` and `num_cv_end` indicate a loop over possible random seeds with seeding `num_cv_start, num_cv_start+1,..,num_cv_end`, `num_data` is the number of candidate points and `num_design` is the number of initial design points. This can also be computed as the user wishes. The ground truths will be stored in `results/survey_design`.
 
-4) To run the experiments, first navigate to `src/meanPopulationStudy/gpMean.R` and change the jitter/nugget term according to what you deem is appropriate. We set it to what we obtain from the output of the maximum marginal likelihood estimator using line 84 in `poptMean_trained_bin.R`. Note that some small jitter is always needed for numerical stability during the kernel matrix inversion for GP-BQ. Then run
+4) To run the experiments, first navigate to `src/survey_design/gpMean.R` and change the jitter/nugget term according to what you deem is appropriate. We set it to what we obtain from the output of the maximum marginal likelihood estimator using line 84 in `poptMean_trained_bin.R`. Note that some small jitter is always needed for numerical stability during the kernel matrix inversion for GP-BQ. Then run
 ```
 Rscript poptMean_trained_bin.R num_new_surveys num_cv_start num_cv_end num_data num_design
 ```
