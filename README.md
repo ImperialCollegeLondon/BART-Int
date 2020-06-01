@@ -177,7 +177,7 @@ This will create `train2.csv` and `candidate2.csv`, which store the possible ini
 ```
 Rscript bart_compute_groundtruth.R num_cv_start num_cv_end num_data num_design 1
 ```
-where `num_cv_start` and `num_cv_end` indicate a loop over possible random seeds with seeding `num_cv_start, num_cv_start+1,..,num_cv_end`, `num_data` is the number of candidate points and `num_design` is the number of initial design points. This can also be computed as the user wishes. The ground truths will be stored in `results/survey_design`.
+where `num_cv_start` and `num_cv_end` indicate a loop over possible random seeds with seeding `num_cv_start, num_cv_start+1,..,num_cv_end`, `num_data` is the number of candidate points and `num_design` is the number of initial design points. This can also be computed as the user wishes. The ground truths will be stored in `results/survey_design`. Alternatively, you can also just take the mean of the entire dataset of 454,816 points and that would yield very similar results.
 
 4) To run the experiments, first navigate to `src/survey_design/gpMean.R` and change the jitter/nugget term according to what you deem is appropriate. We set it to what we obtain from the output of the maximum marginal likelihood estimator using line 84 in `poptMean_trained_bin.R`. Note that some small jitter is always needed for numerical stability during the kernel matrix inversion for GP-BQ. Then run
 ```
