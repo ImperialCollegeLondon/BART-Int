@@ -122,9 +122,15 @@ where `genz_function_number` follows the indexing in this [documentation](https:
 ```
 Rscript integrationMain.R 1 2 1 matern32 1 uniform 1 1
 ```
-and get results for the continuous function, 2 iterations of sequential design, 1 dimension, matern32 kernel, 1 meaning with sequential design, uniform measure, 1 as a placeholder for the argument involving the number of jumps for a step function, and 1 to indicate whether to save the BART posterior samples at each iteration. For more information, check the first few lines of `integrationMain.R`.
+and get results for the continuous function, 2 iterations of sequential design, 1 dimension, matern32 kernel, 1 meaning with sequential design, uniform measure, 1 as a placeholder for the argument involving the number of jumps for a step function, and 1 to indicate whether to save the BART posterior samples at each iteration. 
 
-Results will also be stored in `results/genz` and `Figures/genz`.]
+As another example with a Gaussian prior and a step function as defined in the appendix of the paper, one could run
+```
+Rscript integrationMain.R 1 2 7 matern32 1 gaussian 1 1
+```
+For more information about each input, check the first few lines of `integrationMain.R`.
+
+Results will also be stored in `results/genz` and `Figures/genz`.
 
 We ran the following to generate the results for Table 1
 ```
