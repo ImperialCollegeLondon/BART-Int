@@ -1,67 +1,95 @@
 library(bcf)
-library(dbarts)
-
-# # Toy example in the package manual
-# p = 3 #two control variables and one moderator
-# n = 250
-# set.seed(1)
-
-# x = matrix(rnorm(n*p), nrow=n)
-# # create targeted selection
-# q = -1*(x[,1]>(x[,2])) + 1*(x[,1]<(x[,2]))
-# # generate treatment variable
-# pi = pnorm(q)
-# z = rbinom(n,1,pi)
-# # tau is the true (homogeneous) treatment effect
-# tau = (0.5*(x[,3] > -3/4) + 0.25*(x[,3] > 0) + 0.25*(x[,3]>3/4))
-# # generate the response using q, tau and z
-# mu = (q + tau*z)
-# # set the noise level relative to the expected mean function of Y
-# sigma = diff(range(q + tau*pi))/8
-# # draw the response variable with additive error
-# y = mu + sigma*rnorm(n)
-# # If you didn't know pi, you would estimate it here
-# pihat = pnorm(q)
-# bcf_fit = bcf(y, z, x, x, pihat, nburn=2000, nsim=2000)
-# # Get posterior of treatment effects
-# tau_post = bcf_fit$tau
-# tauhat = colMeans(tau_post)
-# plot(tau, tauhat); abline(0,1)
-
-
+# Uncomment the following for the modified bcf package
+# source("bcf/R/RcppExports.R")
+# source("bcf/R/bcf.R")
 
 # Experiment1
-g <- function(x) {
-  results <- length(x)
-  results[x == 1] <- 2
-  results[x == 2] <- -1
-  results[x == 3] <- -4
+g <- function(w) {
+  results <- rep(NA, length(w))
+  results[w == 1] <- 2
+  results[w == 2] <- -1
+  results[w == 3] <- -4
+  if (any(w != 1 | w != 2 | w != 3))
   return(results)
 }
+
+treatment_func <- function(x, homogeneous) {
+  # Homogeneous
+  if (homogeneous) {
+    return(rep(3, dim(x)[1]))
+  } else {
+    # Heterogeneous
+    return(1 + 2 * x[, 2] * x[, 5])
+  }
+}
+
+prognostic_func <- function(x, linear) {
+  if (linear == 1) {
+    # g1
+    results <- 1 + g(x[, 5]) + x[, 1] * x[, 3]
+  } else {
+    # g2
+    results = -6 + g(x[, 5]) + 6 * abs(x[, 3] - 1)
+  }
+  return(results)
+}
+
+
+args <- commandArgs(TRUE)
+n <- as.double(args[1])
+sigma <- as.double(args[2]) # observation noise of y
+homogeneous <- as.double(args[3]) # 1 if true
+linear <- as.character(args[4]) # 1 if linear
+
+# n <- 250
+# homogeneous <- 0
+# linear <- 1
+# sigma <- 0.1
+
 set.seed(1)
-p = 5
-n = 250
+p <- 5
 
-x = matrix(rnorm(n*p), ncol = p)
-x[, 4] = x[, 4] > 1
-x[, 5] = sample(c(1, 2, 3), n, replace = TRUE)
-x_input = makeModelMatrixFromDataFrame(data.frame(x[, 1:3], as.factor(x[, 4]), as.factor(x[, 5])))
+# Create covariates x
+x <- matrix(rnorm(n*p), ncol = p)
+x[, 4] <- x[, 4] > 1
+x[, 5] <- sample(c(1, 2, 3), n, replace = TRUE)
+x_input <- dbarts::makeModelMatrixFromDataFrame(data.frame(x[, 1:3], as.factor(x[, 4]), as.factor(x[, 5])))
 
-tau = 3
-mu = 1 + g(x[, 5]) + x[, 1] * x[, 3]
+# Compute tau, mu and pi
+tau <- treatment_func(x, homogeneous)
+mu <- prognostic_func(x, linear)
+propensity <- 0.8 * pnorm(3 * mu / sd(mu) - 0.5 * x[, 1]) + 0.05 + 0.1 * runif(n)
 
-s = sd(mu)
-pi = 0.8 * pnorm(3 * mu / s - 0.5 * x[, 1]) + 0.05 + runif(n) / 10
-z = rbinom(n, rep(1, n), pi)
+# Model: 
+# Y_i = f(x_i, Z_i) + epsilon_i
+# epsilon_i ~ N(0, sigma^2)
+# f(x_i, z_i) = mu(x_i) + tau(x_i) * z_i
+z <- rbinom(n, rep(1, n), propensity)
+y <- mu + tau * z + sigma * rnorm(n)
 
-sigma = 1
-y = mu + tau * z + sigma * rnorm(n)
+# If pi is unknown, we would need to estimate it here
+pihat <- propensity
 
-pihat = pi
+bcf_fit <- bcf(y, z, x_input, x_input, pihat, nburn=2000, nsim=2000, nthin = 5)
 
-bcf_fit = bcf(y, z, x_input, x_input, pihat, nburn=2000, nsim=2000)
-# Get posterior of treatment effects
-tau_post = bcf_fit$tau
-tauhat = colMeans(tau_post)
+# Get posterior samples of treatment effects
+tau_post <- bcf_fit$tau
+tauhat <- colMeans(tau_post)
 plot(tau, tauhat); abline(0,1)
+
+# the posterior of the averaged treatment effects
+print(paste0("Mean of |CATE - CATE_hat|: ", mean(abs(tau-tauhat))))
+
+if (homogeneous){
+  # Sample ATE
+  y_treated <- y
+  y_controled <- y
+  y_treated[z == 0] <- (y + tauhat)[z == 0]
+  y_controled[z == 1] <- (y - tauhat)[z == 1]
+  sate <- mean(y_treated - y_controled)
+  print(paste0("True SATE: ", 3, " . Estimated: ", sate, ". Abs. diff: ", abs(sate - 3)))
+}
+
+
+# Compute coverage
 
