@@ -3,7 +3,17 @@ library(dbarts)
 library(data.tree)
 library(BART)
 library(matrixStats)
-computeBART <- function(trainX, trainY, candidateX, candidateY, num_iterations, save_posterior = FALSE, save_posterior_dir = "bcf/synthetic", num_cv = "default") {
+library(mvtnorm)
+
+prob_density <- function(x) {
+  prob <- mvtnorm::dmvnorm(x[, c(1, 2, 3)])
+  prob <- prob / 3
+  prob[x[, 4] == 0] <- prob[x[, 4] == 0] * pnorm(1)
+  prob[x[, 4] == 1] <- prob[x[, 4] == 1] * (1 - pnorm(1))
+  return (prob)
+}
+
+computeBARTWeighted <- function(trainX, trainY, candidateX, candidateY, num_iterations, save_posterior = FALSE, save_posterior_dir = "bcf/synthetic", num_cv = "default") {
   dim <- ncol(trainX)
   print(c("Adding number of new training data:", num_iterations))
   # outputs
@@ -26,7 +36,7 @@ computeBART <- function(trainX, trainY, candidateX, candidateY, num_iterations, 
     sink()
 
     # predict the values
-    fValues <- predict(model, candidateX)
+    fValues <- predict(model, candidateX) * prob_density(candidateX)
 
     # select the best candidate, find its response
     var <- colVars(fValues)
