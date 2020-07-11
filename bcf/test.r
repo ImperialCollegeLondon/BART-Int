@@ -184,4 +184,7 @@ predictionGPBQ <- computeGPBQ(
 
 
 
-
+# BART
+source("bcf/BART.R")
+x_input_bart <- dbarts::makeModelMatrixFromDataFrame(data.frame(x[, 1:3], as.factor(x[, 4]), as.factor(x[, 5]), z))
+BARTResults <- computeBART(x_input_bart, y, x_input_bart, y, 1)
