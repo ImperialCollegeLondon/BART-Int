@@ -41,10 +41,10 @@ sigma <- as.double(args[2]) # observation noise of y
 homogeneous <- as.double(args[3]) # 1 if true
 linear <- as.character(args[4]) # 1 if linear
 
-# n <- 250
-# homogeneous <- 0
-# linear <- 1
-# sigma <- 0.1
+n <- 250
+sigma <- 0.1
+homogeneous <- 1
+linear <- 1
 
 set.seed(1)
 p <- 5
@@ -82,14 +82,106 @@ print(paste0("Mean of |CATE - CATE_hat|: ", mean(abs(tau-tauhat))))
 
 if (homogeneous){
   # Sample ATE
-  y_treated <- y
-  y_controled <- y
-  y_treated[z == 0] <- (y + tauhat)[z == 0]
-  y_controled[z == 1] <- (y - tauhat)[z == 1]
+  y_treated <- bcf_fit$yhat
+  y_controled <- bcf_fit$yhat
+  y_treated[z == 0] <- (y_treated + tauhat)[z == 0]
+  y_controled[z == 1] <- (y_controled - tauhat)[z == 1]
   sate <- mean(y_treated - y_controled)
   print(paste0("True SATE: ", 3, " . Estimated: ", sate, ". Abs. diff: ", abs(sate - 3)))
 }
 
+# Z = 1, 
+# Y = Y(1)
+# Y(0)
+# E[Y(1) - Y(0)] = ATE
+# Y(0) = Y(1) - ATE
 
-# Compute coverage
+# Y(1) = Y(0) + ATE
+
+
+# Gaussian processes
+computeGPBQ <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale=1, sequential=TRUE, measure) 
+  #'Gaussian Process with Bayesian Quadrature
+  #' 
+  #'@description This function calculates the approxiamtion of integration using
+  #'Gaussian Process, Bayesian Quadrature and Sequential Design
+  #' 
+  #'@param dim Integer; Dimension of input X 
+  #'@param epochs Integer; Number of new data points
+  #'@param FUN Function; The function to be integrated
+  #'@param lengthscale Integer; The parameter in standard kernel
+  #'
+  #'@return List; A list containing meanValue (apprimation) and variance of GP method
+
+{
+  #define genz function
+  genz <- FUN
+  meanValueGP <- c()
+  varianceGP <- c()
+   
+  N <- dim(X)[1]
+
+  K <- matrix(0,nrow=N,ncol=N)
+  jitter = 1e-7
+
+  if (kernel == "rbf") {
+    kernel <- rbfdot(.5/lengthscale^2)
+  } else if (kernel == "matern32") {
+     kernel <- maternKernelWrapper(lengthscale)
+  }  
+  
+  # K = kernel(X)
+  K = kernelMatrix(X, X, kernel = kernel)
+  # compute the variance
+  if (measure == "uniform"){
+    int.points.1 <- X
+    int.points.2 <- X
+  } else {
+    warning(paste("Only uniform (empirical) measure is allowed but got", measure))
+  }
+  cov <- kernel(int.points.1, int.points.2)
+  var.firstterm <- mean(cov[upper.tri(cov)])
+  cov <- kernel(int.points.1, X)
+  z <- colMeans(cov) 
+  covInverse <- chol2inv(chol(K + diag(jitter, nrow(K))))
+  meanValueGP[1] <- t(z) %*% covInverse %*% Y
+  tmp <- t(z)%*% covInverse %*% z 
+  varianceGP[1] <- var.firstterm - tmp
+  # cat(var.firstterm, tmp,"\n")
+
+  # train
+  if (epochs == 1){
+    return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "X" = X, "Y" = Y, "K" = K))
+  }
+}
+
+
+
+whichKernel <- "rbf"
+x_input_gp <- cbind(x_input, pihat, z)
+setwd("../")
+library(reticulate)
+source("src/optimise_gp.R")
+lengthscale <- optimise_gp_r(x_input_gp, matrix(y, nrow = n), kernel = whichKernel, epochs = 500)
+print("...Finished training for the lengthscale")
+source("src/GPBQ.R")
+setwd("bcf/")
+# Get GP posterior
+predictionGPBQ <- computeGPBQ(
+  x_input_gp,
+  matrix(y, nrow = n),
+  dim = dim(x_input_gp)[2],
+  epochs = 1,
+  kernel = whichKernel,
+  FUN = mean,   # FUN is not used if epoch = 1
+  lengthscale,
+  sequential = FALSE,
+  measure = "uniform"
+)
+
+
+
+
+
+
 
