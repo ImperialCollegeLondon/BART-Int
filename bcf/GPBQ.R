@@ -2,7 +2,7 @@ library(mvtnorm)
 library(MASS)
 library(kernlab)
 library(rdist)
-source("bcf/BART.R")   # importing density function for x
+# source("bcf/BART.R")   # importing density function for x
 
 
 maternKernelWrapper <- function(lengthscale = 1, sigma = 1) {
@@ -27,11 +27,11 @@ maternKernelWrapper <- function(lengthscale = 1, sigma = 1) {
 
 rescale <- function(x) {x * attr(x, 'scaled:scale') + attr(x, 'scaled:center')}
 maternKernelWrapper_2 <- function(lengthscale=1, sigma=1) {
-  matern <- function (X, Y=NA) {
-    if (is.na(Y)) {
-      d <- pdist(X)
+  matern <- function (trainX, trainY=NA) {
+    if (is.na(trainY)) {
+      d <- pdist(trainX)
     } else {
-      d <- cdist(X, Y)
+      d <- cdist(trainX, trainY)
     }
     k <- sigma^2 * (1 + sqrt(3) * d / lengthscale) * exp(- sqrt(3) * d / lengthscale)
     return (k)
@@ -39,28 +39,22 @@ maternKernelWrapper_2 <- function(lengthscale=1, sigma=1) {
 }
 
 
-computeGPBQ <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale=1, sequential=TRUE, measure) 
-  #'Gaussian Process with Bayesian Quadrature
-  #' 
-  #'@description This function calculates the approxiamtion of integration using
-  #'Gaussian Process, Bayesian Quadrature and Sequential Design
-  #' 
-  #'@param dim Integer; Dimension of input X 
-  #'@param epochs Integer; Number of new data points
-  #'@param FUN Function; The function to be integrated
-  #'@param lengthscale Integer; The parameter in standard kernel
-  #'
-  #'@return List; A list containing meanValue (apprimation) and variance of GP method
-
+computeGPBQWeighted <- function(trainX, trainY, candidateX, candidateY, kernel="rbf", lengthscale, num_iterations, save_k=FALSE, save_posterior_dir="bcf/synthetic", num_cv="default") 
 {
-  #define genz function
-  genz <- FUN
+  N <- dim(trainX)[1]
+  xdim <- dim(trainX)[2]
+  
+  print(c("Adding number of new training data:", num_iterations))
+  # outputs
+  meanValue <- rep(0, num_iterations)
+  standardDeviation <- rep(0, num_iterations)
+  trainData <- cbind(trainX, trainY)
+  fullData <- rbind(trainX, candidateX)
+
   meanValueGP <- c()
   varianceGP <- c()
    
-  N <- dim(X)[1]
-
-  K <- matrix(0,nrow=N,ncol=N)
+  K <- matrix(0, nrow=N, ncol=N)
   jitter = 1e-7
 
   if (kernel == "rbf") {
@@ -70,64 +64,60 @@ computeGPBQ <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale=1, seq
      kernel <- maternKernelWrapper_2(lengthscale)
   }  
   
-  K = kernelMatrix(kernel, X)
-  # compute the variance
-  if (measure == "uniform"){
-    int.points.1 <- replicate(dim, runif(10000))
-    int.points.2 <- replicate(dim, runif(10000))
-  } else if (measure == "gaussian") {
-    int.points.1 <- replicate(dim, rtnorm(10000, mean = 0.5, lower=0, upper=1))
-    int.points.2 <- replicate(dim, rtnorm(10000, mean = 0.5, lower=0, upper=1))
-  }
+  int.points.1 <- generate_x_GPBQ(5000)
+  int.points.2 <- generate_x_GPBQ(5000)
+  K <- kernelMatrix(kernel, trainX)
+  # compute the variance weighted by probability density
   cov <- kernelMatrix(kernel, int.points.1, int.points.2)
   var.firstterm <- mean(cov[upper.tri(cov)])
-  cov <- kernelMatrix(kernel, int.points.1, X)
+  cov <- kernelMatrix(kernel, int.points.1, trainX)
   z <- colMeans(cov) 
   covInverse <- chol2inv(chol(K + diag(jitter, nrow(K))))
-  meanValueGP[1] <- t(z) %*% covInverse %*% Y
+  meanValueGP[1] <- t(z) %*% covInverse %*% trainY
   tmp <- t(z)%*% covInverse %*% z 
   varianceGP[1] <- var.firstterm - tmp
   # cat(var.firstterm, tmp,"\n")
 
   # train
-  if (epochs == 1){
-    return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "X" = X, "Y" = Y, "K" = K))
+  if (num_iterations == 1){
+    return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "X" = trainX, "Y" = trainY, "K" = K))
   }
-  for (p in 2:epochs) {
+  for (i in 2:num_iterations) {
    
-    print(paste("GPBQ: Epoch =", p))
-    candidateSetNum <- 100
-	  candidateSet <- replicate(dim, runif(candidateSetNum))
-    K_prime <- diag(N+p-1)
-    K_prime[1:(N+p-2), 1:(N+p-2)] <- K
+    print(paste("GPBQ: Epoch =", i))
+    K_prime <- diag(N+i-1)
+    K_prime[1:(N+i-2), 1:(N+i-2)] <- K
     
-    if (sequential){
-      K_star_star <- kernelMatrix(kernel, candidateSet)
-      K_star <- kernelMatrix(kernel, candidateSet, X)
-      candidate_Var <- diag(K_star_star - K_star %*% chol2inv(chol(K + diag(jitter, N+p-2))) %*% t(K_star))
-      index <- which(candidate_Var == max(candidate_Var))[1]
-    }
-    else {    
-      index <- sample(1:candidateSetNum, 1)
-    }
+    K_star_star <- kernelMatrix(kernel, candidateX)
+    K_star <- kernelMatrix(kernel, candidateX, trainX)
+    candidate_var <- diag(K_star_star - K_star %*% chol2inv(chol(K + diag(jitter, N+i-2))) %*% t(K_star)) * prob_density(candidateX)
+    index <- sample(which(candidate_var == max(candidate_var)), 1)
     
-    kernel_new_entry <- kernelMatrix(kernel, matrix(candidateSet[index,], nrow=1), X)
-    
-    K_prime[N+p-1,1:(N+p-2)] <- kernel_new_entry
-    K_prime[1:(N+p-2),N+p-1] <- kernel_new_entry
-    X <- rbind(X,candidateSet[index,])
-    additionalResponse <- as.matrix( t(candidateSet[index,]), ncol = length(candidateSet[index,]) )
-
-    Y <- c(Y, genz(additionalResponse))
+    # Update kernel matrix
+    kernel_new_entry <- kernelMatrix(kernel, matrix(candidateX[index,], nrow=1), trainX)
+    K_prime[N+i-1, 1:(N+i-2)] <- kernel_new_entry
+    K_prime[1:(N+i-2), N+i-1] <- kernel_new_entry
     K <- K_prime
+  
+    # Update train and candidate X
+    trainX <- rbind(trainX, candidateX[index,])
+    candidateX <- candidateX[-index,]
+    # Update train and candidate Y (for output)
+    trainY <- c(trainY, candidateY[index])
+    candidateY <- candidateY[-index]
     
     # add in extra term obtained by integration
-    cov <- kernelMatrix(kernel, int.points.1, X)
+    cov <- kernelMatrix(kernel, int.points.1, trainX)
     z <- colMeans(cov)
-    covInverse <- chol2inv(chol(K + diag(jitter, N+p-1)))
-    meanValueGP[p] <- t(z) %*% covInverse %*% Y
-    varianceGP[p] <- var.firstterm - t(z) %*% covInverse %*% z
+    covInverse <- chol2inv(chol(K + diag(jitter, N+i-1)))
+    meanValueGP[i] <- t(z) %*% covInverse %*% trainY
+    varianceGP[i] <- var.firstterm - t(z) %*% covInverse %*% z
   }
+  
+  trainData <- cbind(trainX, trainY)
 
-  return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "X" = X, "Y" = Y, "K" = K))
+  if (save_k == TRUE) {
+    save(list("K" = K), file = paste0(save_posterior_dir, "/GPBQ_k_synthetic_%s_%s" %--% c(i, num_cv), ".RData"))
+  }
+  return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "trainData" = trainData, "K" = K))
 }
