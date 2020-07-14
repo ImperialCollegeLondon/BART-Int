@@ -38,86 +38,113 @@ maternKernelWrapper_2 <- function(lengthscale=1, sigma=1) {
   }
 }
 
-
-computeGPBQWeighted <- function(trainX, trainY, candidateX, candidateY, kernel="rbf", lengthscale, num_iterations, save_k=FALSE, save_posterior_dir="bcf/synthetic", num_cv="default") 
+computeGPBQEmpirical <- function(X, Y, candidateX, candidateY, epochs, kernel="rbf", lengthscale, sequential=TRUE, linear=1) 
 {
-  N <- dim(trainX)[1]
-  xdim <- dim(trainX)[2]
-  
-  print(c("Adding number of new training data:", num_iterations))
-  # outputs
-  meanValue <- rep(0, num_iterations)
-  standardDeviation <- rep(0, num_iterations)
-  trainData <- cbind(trainX, trainY)
-  fullData <- rbind(trainX, candidateX)
-
   meanValueGP <- c()
   varianceGP <- c()
-   
-  K <- matrix(0, nrow=N, ncol=N)
-  jitter = 1e-7
-
+  condition <- c()
+  
+  N <- dim(X)[1]
+  
+  K <- matrix(0,nrow=N,ncol=N)
+  jitter = 1e-6
+  
   if (kernel == "rbf") {
     kernel <- rbfdot(.5/lengthscale^2)
   }
   else if (kernel == "matern32") {
-     kernel <- maternKernelWrapper_2(lengthscale)
+    kernel <- maternKernelWrapper_2(lengthscale)
   }  
   
-  int.points.1 <- generate_x_GPBQ(5000)
-  int.points.2 <- generate_x_GPBQ(5000)
-  K <- kernelMatrix(kernel, trainX)
-  # compute the variance weighted by probability density
-  cov <- kernelMatrix(kernel, int.points.1, int.points.2)
-  var.firstterm <- mean(cov[upper.tri(cov)])
-  cov <- kernelMatrix(kernel, int.points.1, trainX)
+  # compute the variance
+  notOneHotX <- X
+  X <- dbarts::makeModelMatrixFromDataFrame(X)
+  X <- as.matrix(X)
+  notOneHotCandidateX <- candidateX
+  candidateX <- dbarts::makeModelMatrixFromDataFrame(candidateX)
+  candidateX <- as.matrix(candidateX)
+  
+  allSet <- as.matrix(rbind(X, candidateX))
+  xDim <- dim(X)[2] - 1
+  allSetTreated <- allSet
+  allSetTreated[, (xDim + 1)] <- 1
+  allSetControl <- allSet
+  allSetControl[, (xDim + 1)] <- 0
+  
+  K_allTreated <- kernel(allSetTreated)
+  var.firsttermTreated <- sum(K_allTreated)/(nrow(allSetTreated)^2)
+  
+  K = kernel(X)
+  cov <- kernel(allSetTreated, X)
   z <- colMeans(cov) 
   covInverse <- chol2inv(chol(K + diag(jitter, nrow(K))))
-  meanValueGP[1] <- t(z) %*% covInverse %*% trainY
-  tmp <- t(z)%*% covInverse %*% z 
-  varianceGP[1] <- var.firstterm - tmp
-  # cat(var.firstterm, tmp,"\n")
-
-  # train
-  if (num_iterations == 1){
-    return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "X" = trainX, "Y" = trainY, "K" = K))
-  }
-  for (i in 2:num_iterations) {
-   
-    print(paste("GPBQ: Epoch =", i))
-    K_prime <- diag(N+i-1)
-    K_prime[1:(N+i-2), 1:(N+i-2)] <- K
-    
-    K_star_star <- kernelMatrix(kernel, candidateX)
-    K_star <- kernelMatrix(kernel, candidateX, trainX)
-    candidate_var <- diag(K_star_star - K_star %*% chol2inv(chol(K + diag(jitter, N+i-2))) %*% t(K_star)) * prob_density(candidateX)
-    index <- sample(which(candidate_var == max(candidate_var)), 1)
-    
-    # Update kernel matrix
-    kernel_new_entry <- kernelMatrix(kernel, matrix(candidateX[index,], nrow=1), trainX)
-    K_prime[N+i-1, 1:(N+i-2)] <- kernel_new_entry
-    K_prime[1:(N+i-2), N+i-1] <- kernel_new_entry
-    K <- K_prime
+  predTreated <- t(z) %*% covInverse %*% Y
   
-    # Update train and candidate X
-    trainX <- rbind(trainX, candidateX[index,])
-    candidateX <- candidateX[-index,]
-    # Update train and candidate Y (for output)
-    trainY <- c(trainY, candidateY[index])
+  K_allControl <- kernel(allSetControl)
+  var.firsttermControl <- sum(K_allControl)/(nrow(allSetControl)^2)
+  
+  covControl <- kernel(allSetControl, X)
+  zControl <- colMeans(covControl) 
+  predControl <- t(zControl) %*% covInverse %*% Y
+  treatment_effects <- predTreated - predControl
+  print(treatment_effects)
+  meanValueGP[1] <- treatment_effects
+  varianceGP[1] <- var.firsttermTreated + var.firsttermControl - t(z) %*% covInverse %*% z - t(zControl) %*% covInverse %*% zControl
+  condition[1] <- rcond(K)
+  # train
+  if (epochs == 1){
+    return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "X" = X, "Y" = Y, "K" = K, "cond" = condition))
+  }
+  
+  K_star_star <- kernel(candidateX)
+  K_star <- kernel(candidateX, X)
+  for (p in 2:epochs) {
+    print(paste("GPBQ: Epoch =", p))
+    K_prime <- diag(N+p-1)
+    K_prime[1:(N+p-2), 1:(N+p-2)] <- K
+    candidate_Var <- diag(K_star_star - K_star %*% solve(K + diag(jitter, nrow(K)), t(K_star))) * prob_density(notOneHotX, linear)
+    
+    index <- which(candidate_Var == max(candidate_Var))[1]
+    kernel_new_entry <- kernel(matrix(candidateX[index,], nrow=1), X)
+    K_prime[N+p-1,1:(N+p-2)] <- kernel_new_entry
+    K_prime[1:(N+p-2),N+p-1] <- kernel_new_entry
+    notOneHotX <- rbind(notOneHotX, notOneHotCandidateX[index,])
+    X <- dbarts::makeModelMatrixFromDataFrame(notOneHotX)
+    
+    Y <- c(Y, candidateY[index])
+    K <- K_prime
+    
+    # update kernel matrices
+    K_star_star <- K_star_star[-index, -index]
+    K_star_new <- matrix(nrow=(nrow(K_star)-1), ncol=(ncol(K_star)+1))
+    K_star_new[1:(nrow(K_star)-1), 1:ncol(K_star)] <- K_star[-index,]
+    K_star_new[1:(nrow(K_star)-1),(ncol(K_star)+1)] <- kernel(candidateX[-index,], matrix(candidateX[index,], nrow=1))
+    K_star <- K_star_new
+    
+    # update candidateX
+    notOneHotCandidateX <- notOneHotCandidateX[-index,]
+    candidateX <- dbarts::makeModelMatrixFromDataFrame(notOneHotCandidateX)
     candidateY <- candidateY[-index]
     
     # add in extra term obtained by integration
-    cov <- kernelMatrix(kernel, int.points.1, trainX)
+    # cov <- kernel(allSet, X)
+    cov_new <- matrix(nrow=nrow(cov), ncol=nrow(X))
+    cov_new[1:nrow(cov),1:(nrow(X)-1)] <- cov 
+    cov_new[1:nrow(cov), nrow(X)] <- kernel(allSetTreated, matrix(X[nrow(X),], ncol=ncol(X)))
+    cov <- cov_new
+    # z <- colMeans(K_star)
     z <- colMeans(cov)
-    covInverse <- chol2inv(chol(K + diag(jitter, N+i-1)))
-    meanValueGP[i] <- t(z) %*% covInverse %*% trainY
-    varianceGP[i] <- var.firstterm - t(z) %*% covInverse %*% z
+    covInverse <- chol2inv(chol(K + diag(jitter, N+p-1)))
+    predTreated <- t(z) %*% covInverse %*% Y
+    
+    covControl <- kernel(allSetControl, X)
+    zControl <- colMeans(covControl) 
+    predControl <- t(zControl) %*% covInverse %*% Y
+    treatment_effects <- predTreated - predControl
+    
+    meanValueGP[p] <- treatment_effects
+    varianceGP[p] <- var.firstterm - t(z) %*% covInverse %*% z
+    condition[p] <- rcond(K)
   }
-  
-  trainData <- cbind(trainX, trainY)
-
-  if (save_k == TRUE) {
-    save(list("K" = K), file = paste0(save_posterior_dir, "/GPBQ_k_synthetic_%s_%s" %--% c(i, num_cv), ".RData"))
-  }
-  return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "trainData" = trainData, "K" = K))
+  return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "X" = X, "Y" = Y, "K" = K, "cond" = condition))
 }

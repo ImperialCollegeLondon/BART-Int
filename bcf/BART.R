@@ -25,7 +25,9 @@ computeBARTWeighted <- function(trainX, trainY, candidateX, candidateY, num_iter
   standardDeviation <- rep(0, num_iterations)
   trainData <- cbind(trainX, trainY)
   fullData <- rbind(trainX, candidateX)
-
+  oppositeFullData <- fullData
+  oppositeFullData[, dim] <- (fullData[, dim] + 1) %% 2
+  
   colnames(trainData)[dim + 1] <- "response"
 
   # generate extra training data using the scheme (see pdf)
@@ -44,11 +46,10 @@ computeBARTWeighted <- function(trainX, trainY, candidateX, candidateY, num_iter
       posterior_samples <- list("posterior_samples" = rowMeans(pred))
       save(posterior_samples, file = paste(save_posterior_dir, "/posterior_BART_synthetic_%s_%s" %--% c(i, num_cv), ".RData", sep = ""))
     }
-    oppositeFullData <- fullData
-    oppositeFullData[, dim] <- (fullData[, dim] + 1) %% 2
+
     pred_opposite <- predict(model, oppositeFullData)
     treatment_effects <- pred - pred_opposite
-    treatment_effects[,fullData[, dim]==0] <- -treatment_effects[,fullData[, dim]==0] 
+    treatment_effects[, fullData[, dim]==0] <- -treatment_effects[, fullData[, dim]==0] 
     meanValue <- mean(treatment_effects)
     # standardDeviation[i] <- sd(trainData[, dim+1]) 
     standardDeviation <- sum((rowMeans(treatment_effects) - meanValue) ^ 2) / (nrow(treatment_effects) - 1)
@@ -87,11 +88,9 @@ computeBARTWeighted <- function(trainX, trainY, candidateX, candidateY, num_iter
       posterior_samples <- list("posterior_samples" = rowMeans(pred))
       save(posterior_samples, file = paste(save_posterior_dir, "/posterior_BART_synthetic_%s_%s" %--% c(i, num_cv), ".RData", sep = ""))
     }
-    oppositeFullData <- fullData
-    oppositeFullData[, dim] <- (fullData[, dim] + 1) %% 2
     pred_opposite <- predict(model, oppositeFullData)
     treatment_effects <- pred - pred_opposite
-    treatment_effects[,fullData[, dim]==0] <- -treatment_effects[,fullData[, dim]==0] 
+    treatment_effects[, fullData[, dim]==0] <- -treatment_effects[, fullData[, dim]==0] 
     meanValue[i] <- mean(treatment_effects)
     # standardDeviation[i] <- sd(trainData[, dim+1]) 
     standardDeviation[i] <- sum((rowMeans(treatment_effects) - meanValue[i]) ^ 2) / (nrow(treatment_effects) - 1)
@@ -110,8 +109,6 @@ computeBARTWeighted <- function(trainX, trainY, candidateX, candidateY, num_iter
     posterior_samples <- list("posterior_samples" = rowMeans(pred))
     save(posterior_samples, file = paste(save_posterior_dir, "/posterior_BART_synthetic_%s_%s" %--% c(i, num_cv), ".RData", sep = ""))
   }
-  oppositeFullData <- fullData
-  oppositeFullData[, dim] <- (fullData[, dim] + 1) %% 2
   pred_opposite <- predict(model, oppositeFullData)
   treatment_effects <- pred - pred_opposite
   treatment_effects[,fullData[, dim]==0] <- -treatment_effects[,fullData[, dim]==0] 

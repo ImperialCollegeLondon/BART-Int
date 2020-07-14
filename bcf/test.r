@@ -48,12 +48,13 @@ sigma <- as.double(args[2]) # observation noise of y
 homogeneous <- as.double(args[3]) # 1 if true
 linear <- as.character(args[4]) # 1 if linear
 
-ntrain <- 250
-ncandidate <- 50
+ntrain <- 500
+ncandidate <- 2000
 n <- ntrain + ncandidate
 sigma <- 0.1
 homogeneous <- 1
 linear <- 1
+n_seqential <- 20
 
 set.seed(1)
 p <- 5
@@ -76,7 +77,6 @@ y <- mu + tau * z + sigma * rnorm(n)
 
 # If pi is unknown, we would need to estimate it here
 pihat <- propensity
-
 bcf_fit <- bcf(y[1:ntrain], z[1:ntrain], x_input[1:ntrain, ], x_input[1:ntrain, ], pihat[1:ntrain], nburn=2000, nsim=2000, nthin= 5)
 
 # Get posterior samples of treatment effects
@@ -93,21 +93,14 @@ if (homogeneous){
   y_controled <- bcf_fit$yhat
   y_treated[z == 0] <- (y_treated + tauhat)[z == 0]
   y_controled[z == 1] <- (y_controled - tauhat)[z == 1]
-  sate <- mean(y_treated - y_controled)
-  print(paste0("True SATE: ", 3, " . Estimated: ", sate, ". Abs. diff: ", abs(sate - 3)))
+  ate <- mean(y_treated - y_controled)
+  print(paste0("True ATE: ", 3, " . Estimated: ", ate, ". Abs. diff: ", abs(ate - 3)))
 }
-
-
-
-# BART
-source("bcf/BART.R")
-x_input_bart <- dbarts::makeModelMatrixFromDataFrame(data.frame(x[, 1:3], as.factor(x[, 4]), as.factor(x[, 5]), z))
-BARTResults <- computeBART(x_input_bart, y, x_input_bart, y, 1)
 
 
 # Gaussian processes
 makeGPBQModelMatrix <- function(df, treatment) {
-  return(dbarts::makeModelMatrixFromDataFrame(data.frame(df[, 1:3], as.factor(df[, 4]), as.factor(df[, 5]), treatment)))
+  return(data.frame(df[, 1:3], as.factor(df[, 4]), as.factor(df[, 5]), treatment))
 }
 # Uncomment the following to exclude treatment z in the data input 
 # makeGPBQModelMatrix <- function(df) {
@@ -125,7 +118,6 @@ generate_x_GPBQ <- function(n) {
 #   return(makeGPBQModelMatrix(generate_x(n, 5)))
 # }
 
-source("bcf/GPBQ.R")
 # Uncomment the following to include treatment z in the data input 
 trainX <- makeGPBQModelMatrix(x[1:ntrain,], z[1:ntrain])
 trainY <- y[1:ntrain]
@@ -139,9 +131,23 @@ candidateY <- y[-(1:ntrain)]
 
 library(reticulate)
 source("src/optimise_gp.R")
-lengthscale <- optimise_gp_r(trainX, trainY, kernel = "rbf", epochs = 500)
+lengthscale <- optimise_gp_r(dbarts::makeModelMatrixFromDataFrame(trainX), trainY, kernel = "matern32", epochs = 500)
 print("...Finished training for the lengthscale")
 
-GPBQResults <- computeGPBQWeighted(trainX, trainY, candidateX, candidateY, "rbf", lengthscale, 1)
+source("bcf/GPBQ.R")
+GPBQResults <- computeGPBQEmpirical(
+  X=trainX, 
+  Y=trainY, 
+  candidateX=candidateX, 
+  candidateY=candidateY, 
+  kernel="matern32", 
+  lengthscale=lengthscale, 
+  epochs=n_seqential
+)
 GPBQResults$meanValueGP
+
+# BART
+source("bcf/BART.R")
+BARTResults <- computeBARTWeighted(trainX, trainY, candidateX, candidateY, n_seqential)
+print(paste0("True ATE: ", 3, " . Estimated: ", BARTResults$meanValueBART, ". Abs. diff: ", abs(BARTResults$meanValueBART - 3)))
 
