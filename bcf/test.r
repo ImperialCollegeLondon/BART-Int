@@ -43,19 +43,21 @@ generate_x <- function(n, p) {
 
 
 args <- commandArgs(TRUE)
-n <- as.double(args[1])
-sigma <- as.double(args[2]) # observation noise of y
-homogeneous <- as.double(args[3]) # 1 if true
-linear <- as.character(args[4]) # 1 if linear
+ntrain <- as.double(args[1])
+ncandidate <- as.double(args[2])
+n_seqential <- as.double(args[3])
+sigma <- as.double(args[4]) # observation noise of y
+homogeneous <- as.double(args[5]) # 1 if true
+linear <- as.character(args[6]) # 1 if linear
+num_cv <- as.character(args[7]) # 1 if linear
 
-ntrain <- 500
-ncandidate <- 2000
+# ntrain <- 500
+# ncandidate <- 2000
+# sigma <- 0.1
+# homogeneous <- 1
+# linear <- 1
+# n_seqential <- 20
 n <- ntrain + ncandidate
-sigma <- 0.1
-homogeneous <- 1
-linear <- 1
-n_seqential <- 20
-
 set.seed(1)
 p <- 5
 
@@ -87,7 +89,7 @@ plot(tau[1:ntrain], tauhat); abline(0,1)
 # the posterior of the averaged treatment effects
 print(paste0("Mean of |CATE - CATE_hat|: ", mean(abs(tau[1:ntrain] - tauhat))))
 
-if (homogeneous){
+if (homogeneous == 1){
   # Sample ATE
   y_treated <- bcf_fit$yhat
   y_controled <- bcf_fit$yhat
@@ -96,7 +98,6 @@ if (homogeneous){
   ate <- mean(y_treated - y_controled)
   print(paste0("True ATE: ", 3, " . Estimated: ", ate, ". Abs. diff: ", abs(ate - 3)))
 }
-
 
 # Gaussian processes
 makeGPBQModelMatrix <- function(df, treatment) {
@@ -144,10 +145,24 @@ GPBQResults <- computeGPBQEmpirical(
   lengthscale=lengthscale, 
   epochs=n_seqential
 )
-GPBQResults$meanValueGP
-
+ 
 # BART
 source("bcf/BART.R")
-BARTResults <- computeBARTWeighted(trainX, trainY, candidateX, candidateY, n_seqential)
+BARTResults <- computeBARTWeighted(trainX, trainY, candidateX, candidateY, n_seqential, num_cv=num_cv, linear=linear)
 print(paste0("True ATE: ", 3, " . Estimated: ", BARTResults$meanValueBART, ". Abs. diff: ", abs(BARTResults$meanValueBART - 3)))
 
+# Bayesian Quadrature methods: with BART, Monte Carlo Integration and Gaussian Process respectively
+print("Final ATE:")
+print(c("Actual integral:", 3))
+print(c("BCF integral:", ate))
+print(c("BART integral:", BARTResults$meanValueBART[(n_seqential+1)]))
+print(c("GP integral:", GPBQResults$meanValueGP[(n_seqential+1)]))
+
+results <- data.frame(
+  "epochs" = c(1:(n_seqential+1)),
+  "BARTMean" = BARTResults$meanValueBART, "BARTsd" = BARTResults$standardDeviationBART,
+  "GPMean" = GPBQResults$meanValueGP, "GPsd" = sqrt(GPBQResults$varianceGP),
+  "actual" = rep(3, n_seqential+1)
+)
+
+write.csv(results, paste("bcf/results/experiment_", n_train, "_num_cv", ".csv"))

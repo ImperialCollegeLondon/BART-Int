@@ -3,7 +3,7 @@ library(MASS)
 library(kernlab)
 library(rdist)
 # source("bcf/BART.R")   # importing density function for x
-
+source("bcf/util.R")
 
 maternKernelWrapper <- function(lengthscale = 1, sigma = 1) {
   maternKernel <- function(x, y) 
@@ -87,27 +87,26 @@ computeGPBQEmpirical <- function(X, Y, candidateX, candidateY, epochs, kernel="r
   zControl <- colMeans(covControl) 
   predControl <- t(zControl) %*% covInverse %*% Y
   treatment_effects <- predTreated - predControl
-  print(treatment_effects)
   meanValueGP[1] <- treatment_effects
   varianceGP[1] <- var.firsttermTreated + var.firsttermControl - t(z) %*% covInverse %*% z - t(zControl) %*% covInverse %*% zControl
   condition[1] <- rcond(K)
   # train
-  if (epochs == 1){
+  if (epochs == 0){
     return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "X" = X, "Y" = Y, "K" = K, "cond" = condition))
   }
   
   K_star_star <- kernel(candidateX)
   K_star <- kernel(candidateX, X)
-  for (p in 2:epochs) {
+  for (p in 1:epochs) {
     print(paste("GPBQ: Epoch =", p))
-    K_prime <- diag(N+p-1)
-    K_prime[1:(N+p-2), 1:(N+p-2)] <- K
+    K_prime <- diag(N+p)
+    K_prime[1:(N+p-1), 1:(N+p-1)] <- K
     candidate_Var <- diag(K_star_star - K_star %*% solve(K + diag(jitter, nrow(K)), t(K_star))) * prob_density(notOneHotX, linear)
     
     index <- which(candidate_Var == max(candidate_Var))[1]
     kernel_new_entry <- kernel(matrix(candidateX[index,], nrow=1), X)
-    K_prime[N+p-1,1:(N+p-2)] <- kernel_new_entry
-    K_prime[1:(N+p-2),N+p-1] <- kernel_new_entry
+    K_prime[N+p,1:(N+p-1)] <- kernel_new_entry
+    K_prime[1:(N+p-1),N+p] <- kernel_new_entry
     notOneHotX <- rbind(notOneHotX, notOneHotCandidateX[index,])
     X <- dbarts::makeModelMatrixFromDataFrame(notOneHotX)
     
@@ -134,7 +133,7 @@ computeGPBQEmpirical <- function(X, Y, candidateX, candidateY, epochs, kernel="r
     cov <- cov_new
     # z <- colMeans(K_star)
     z <- colMeans(cov)
-    covInverse <- chol2inv(chol(K + diag(jitter, N+p-1)))
+    covInverse <- chol2inv(chol(K + diag(jitter, N+p)))
     predTreated <- t(z) %*% covInverse %*% Y
     
     covControl <- kernel(allSetControl, X)
@@ -142,9 +141,9 @@ computeGPBQEmpirical <- function(X, Y, candidateX, candidateY, epochs, kernel="r
     predControl <- t(zControl) %*% covInverse %*% Y
     treatment_effects <- predTreated - predControl
     
-    meanValueGP[p] <- treatment_effects
-    varianceGP[p] <- var.firstterm - t(z) %*% covInverse %*% z
-    condition[p] <- rcond(K)
+    meanValueGP[p+1] <- treatment_effects
+    varianceGP[p+1] <- var.firsttermTreated + var.firsttermControl - t(z) %*% covInverse %*% z - t(zControl) %*% covInverse %*% zControl
+    condition[p+1] <- rcond(K)
   }
   return (list("meanValueGP" = meanValueGP, "varianceGP" = varianceGP, "X" = X, "Y" = Y, "K" = K, "cond" = condition))
 }
