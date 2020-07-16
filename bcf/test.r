@@ -165,4 +165,4 @@ results <- data.frame(
   "actual" = rep(3, n_seqential+1)
 )
 
-write.csv(results, paste("bcf/results/experiment_", n_train, "_num_cv", ".csv"))
+write.csv(results, paste("bcf/results/experiment_", ntrain, "_", num_cv,  ".csv"))
