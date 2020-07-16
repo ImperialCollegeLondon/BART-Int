@@ -145,3 +145,12 @@ print("...Finished training for the lengthscale")
 GPBQResults <- computeGPBQWeighted(trainX, trainY, candidateX, candidateY, "rbf", lengthscale, 1)
 GPBQResults$meanValueGP
 
+if (homogeneous){
+  # Sample ATE
+  y_treated <- bcf_fit$yhat
+  y_controled <- bcf_fit$yhat
+  y_treated[z == 0] <- (y_treated + tauhat)[z == 0]
+  y_controled[z == 1] <- (y_controled - tauhat)[z == 1]
+  sate <- mean(y_treated - y_controled)
+  print(paste0("True SATE: ", 3, " . Estimated: ", sate, ". Abs. diff: ", abs(sate - 3)))
+}
