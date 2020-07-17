@@ -62,3 +62,6 @@ env/
 *.csv
 *.zip
 *.Rproj
+
+# BCF example script
+/bcf/rev.simus.R

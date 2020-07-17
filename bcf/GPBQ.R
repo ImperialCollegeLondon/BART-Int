@@ -2,7 +2,6 @@ library(mvtnorm)
 library(MASS)
 library(kernlab)
 library(rdist)
-# source("bcf/BART.R")   # importing density function for x
 source("bcf/util.R")
 
 maternKernelWrapper <- function(lengthscale = 1, sigma = 1) {
@@ -28,7 +27,7 @@ maternKernelWrapper <- function(lengthscale = 1, sigma = 1) {
 rescale <- function(x) {x * attr(x, 'scaled:scale') + attr(x, 'scaled:center')}
 maternKernelWrapper_2 <- function(lengthscale=1, sigma=1) {
   matern <- function (trainX, trainY=NA) {
-    if (is.na(trainY)) {
+    if (any(is.na(trainY))) {
       d <- pdist(trainX)
     } else {
       d <- cdist(trainX, trainY)
