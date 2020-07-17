@@ -51,12 +51,12 @@ homogeneous <- as.double(args[5]) # 1 if true
 linear <- as.character(args[6]) # 1 if linear
 num_cv <- as.character(args[7]) # 1 if linear
 
-# ntrain <- 500
+# ntrain <- 250
 # ncandidate <- 2000
-# sigma <- 0.1
+# sigma <- 2
 # homogeneous <- 1
 # linear <- 1
-# n_seqential <- 20
+# n_seqential <- 1
 n <- ntrain + ncandidate
 set.seed(1)
 p <- 5
@@ -75,18 +75,21 @@ propensity <- 0.8 * pnorm(3 * mu / sd(mu) - 0.5 * x[, 1]) + 0.05 + 0.1 * runif(n
 # epsilon_i ~ N(0, sigma^2)
 # f(x_i, z_i) = mu(x_i) + tau(x_i) * z_i
 z <- rbinom(n, rep(1, n), propensity)
-y <- mu + tau * z + sigma * rnorm(n)
+Ey <- mu + tau * z
+noiseVar <- sigma * sd(Ey)
+y <- Ey + noiseVar*rnorm(n)
 
 # If pi is unknown, we would need to estimate it here
 pihat <- propensity
-bcf_fit <- bcf(y[1:ntrain], z[1:ntrain], x_input[1:ntrain, ], x_input[1:ntrain, ], pihat[1:ntrain], nburn=2000, nsim=2000, nthin= 5)
+# bcf_fit <- bcf(y[1:ntrain], z[1:ntrain], x_input[1:ntrain, ], x_input[1:ntrain, ], pihat[1:ntrain], nburn=2000, nsim=2000, nthin= 5)
+bcf_fit <- bcf(y[1:ntrain], z[1:ntrain], x_input[1:ntrain, ], x_input[1:ntrain, ], pihat[1:ntrain], 10000, 3000)
 
 # Get posterior samples of treatment effects
 tau_post <- bcf_fit$tau
 tauhat <- colMeans(tau_post)
-plot(tau[1:ntrain], tauhat); abline(0,1)
+# plot(tau[1:ntrain], tauhat); abline(0,1)
 
-# the posterior of the averaged treatment effects
+# Posterior of the averaged treatment effects
 print(paste0("Mean of |CATE - CATE_hat|: ", mean(abs(tau[1:ntrain] - tauhat))))
 
 if (homogeneous == 1){
@@ -151,7 +154,7 @@ source("bcf/BART.R")
 BARTResults <- computeBARTWeighted(trainX, trainY, candidateX, candidateY, n_seqential, num_cv=num_cv, linear=linear)
 print(paste0("True ATE: ", 3, " . Estimated: ", BARTResults$meanValueBART, ". Abs. diff: ", abs(BARTResults$meanValueBART - 3)))
 
-# Bayesian Quadrature methods: with BART, Monte Carlo Integration and Gaussian Process respectively
+# Bayesian Quadrature methods: with BART and Gaussian Process
 print("Final ATE:")
 print(c("Actual integral:", 3))
 print(c("BCF integral:", ate))
@@ -165,4 +168,4 @@ results <- data.frame(
   "actual" = rep(3, n_seqential+1)
 )
 
-write.csv(results, paste("bcf/results/experiment_", ntrain, "_", num_cv,  ".csv"))
+write.csv(results, paste0("bcf/results/homo", homogeneous, "_", "sigma", sigma, "_", ntrain, "_", num_cv, ".csv"))
