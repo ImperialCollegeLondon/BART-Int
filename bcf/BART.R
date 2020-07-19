@@ -4,7 +4,6 @@ library(data.tree)
 library(BART)
 library(matrixStats)
 library(mvtnorm)
-source("bcf/util.R")
 
 computeBARTWeighted <- function(trainX, trainY, candidateX, candidateY, num_iterations, save_posterior = FALSE, save_posterior_dir = "bcf/results", num_cv = "default", linear=1) {
   dim <- ncol(trainX)
