@@ -13,9 +13,9 @@ linear <- as.character(args[6]) # 1 if linear
 num_cv <- as.character(args[7]) # 1 if linear
 which_experiment <- as.double(args[8]) # 1 or 2
 
-# ntrain <- 250
+# ntrain <- 50
 # ncandidate <- 2000
-# sigma <- 0.1
+# sigma <- 2
 # homogeneous <- 1
 # linear <- 1
 # n_seqential <- 1
@@ -160,4 +160,4 @@ results <- data.frame(
   "actual" = rep(3, n_seqential+1)
 )
 
-write.csv(results, paste0("bcf/results/homo", homogeneous, "_", "sigma", sigma, "_", ntrain, "_", num_cv, ".csv"))
+write.csv(results, paste0("bcf/results/exp", which_experiment, "_", "sigma", sigma, "_", ntrain, "_", num_cv, ".csv"))
