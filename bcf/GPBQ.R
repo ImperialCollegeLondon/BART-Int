@@ -2,7 +2,6 @@ library(mvtnorm)
 library(MASS)
 library(kernlab)
 library(rdist)
-source("bcf/util.R")
 
 maternKernelWrapper <- function(lengthscale = 1, sigma = 1) {
   maternKernel <- function(x, y) 
