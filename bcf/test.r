@@ -1,4 +1,4 @@
-library(bcf)
+# library(bcf)
 # Uncomment the following for the modified bcf package
 # source("bcf/R/RcppExports.R")
 # source("bcf/R/bcf.R")
@@ -12,16 +12,17 @@ homogeneous <- as.double(args[5]) # 1 if true
 linear <- as.character(args[6]) # 1 if linear
 num_cv <- as.character(args[7]) # 1 if linear
 which_experiment <- as.double(args[8]) # 1 or 2
+sequential <- as.double(args[9]) # 1 or 2
 
 # ntrain <- 50
 # ncandidate <- 2000
-# sigma <- 2
+# sigma <- 0.1
 # homogeneous <- 1
 # linear <- 1
 # n_seqential <- 1
-# which_experiment <- 2
+# which_experiment <- 1
 n <- ntrain + ncandidate
-set.seed(1)
+set.seed(num_cv)
 p <- 5
 
 # Experiment
@@ -65,41 +66,41 @@ y <- Ey + noiseVar*rnorm(n)
 
 # If pi is unknown, we would need to estimate it here
 # pihat <- propensity
-library(nnet)
-x.mod <- dbarts::makeModelMatrixFromDataFrame(data.frame(x))
-fitz <- nnet(z~., data = x.mod, size = 4, rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2, trace=FALSE)
-pihat <- fitz$fitted.values
+# library(nnet)
+# x.mod <- dbarts::makeModelMatrixFromDataFrame(data.frame(x))
+# fitz <- nnet(z~., data = x.mod, size = 4, rang = 0.1, maxit = 1000, abstol = 1.0e-8, decay = 5e-2, trace=FALSE)
+# pihat <- fitz$fitted.values
 
-# BCF
-# bcf_fit <- bcf(y[1:ntrain], z[1:ntrain], x_input[1:ntrain, ], x_input[1:ntrain, ], pihat[1:ntrain], nburn=2000, nsim=2000, nthin= 5)
-bcf_fit <- bcf(y[1:ntrain], z[1:ntrain], x_input[1:ntrain, ], x_input[1:ntrain, ], pihat[1:ntrain], 10000, 3000)
+# # BCF
+# # bcf_fit <- bcf(y[1:ntrain], z[1:ntrain], x_input[1:ntrain, ], x_input[1:ntrain, ], pihat[1:ntrain], nburn=2000, nsim=2000, nthin= 5)
+# bcf_fit <- bcf(y[1:ntrain], z[1:ntrain], x_input[1:ntrain, ], x_input[1:ntrain, ], pihat[1:ntrain], 10000, 3000)
 
-# Get posterior samples of treatment effects
-tau_post <- bcf_fit$tau
-tauhat <- colMeans(tau_post)
-# plot(tau[1:ntrain], tauhat); abline(0,1)
+# # Get posterior samples of treatment effects
+# tau_post <- bcf_fit$tau
+# tauhat <- colMeans(tau_post)
+# # plot(tau[1:ntrain], tauhat); abline(0,1)
 
-# Posterior of the averaged treatment effects
-print(paste0("Mean of |CATE - CATE_hat|: ", mean(abs(tau[1:ntrain] - tauhat))))
+# # Posterior of the averaged treatment effects
+# print(paste0("Mean of |CATE - CATE_hat|: ", mean(abs(tau[1:ntrain] - tauhat))))
 
-if (homogeneous == 1 & which_experiment == 1){
-  # Sample ATE
-  y_treated <- bcf_fit$yhat
-  y_controled <- bcf_fit$yhat
-  y_treated[z == 0] <- (y_treated + tauhat)[z == 0]
-  y_controled[z == 1] <- (y_controled - tauhat)[z == 1]
-  sate <- mean(y_treated - y_controled)
-  true_sate <- mean(tau[1:ntrain])
-  print(paste0("True ATE: ", true_sate, " . Estimated: ", sate, ". Abs. diff: ", abs(sate - 3)))
-} else {
-  y_treated <- bcf_fit$yhat
-  y_controled <- bcf_fit$yhat
-  y_treated[z == 0] <- (y_treated + tauhat)[z == 0]
-  y_controled[z == 1] <- (y_controled - tauhat)[z == 1]
-  sate <- mean(y_treated - y_controled)
-  true_sate <- mean(tau[1:ntrain])
-  print(paste0("True SATE: ", true_sate, ". Estimated: ", sate, ". Abs. diff: ", abs(sate - true_sate))) 
-}
+# if (homogeneous == 1 & which_experiment == 1){
+#   # Sample ATE
+#   y_treated <- bcf_fit$yhat
+#   y_controled <- bcf_fit$yhat
+#   y_treated[z == 0] <- (y_treated + tauhat)[z == 0]
+#   y_controled[z == 1] <- (y_controled - tauhat)[z == 1]
+#   sate <- mean(y_treated - y_controled)
+#   true_sate <- mean(tau[1:n])
+#   print(paste0("True ATE: ", true_sate, " . Estimated: ", sate, ". Abs. diff: ", abs(sate - 3)))
+# } else {
+#   y_treated <- bcf_fit$yhat
+#   y_controled <- bcf_fit$yhat
+#   y_treated[z == 0] <- (y_treated + tauhat)[z == 0]
+#   y_controled[z == 1] <- (y_controled - tauhat)[z == 1]
+#   sate <- mean(y_treated - y_controled)
+#   true_sate <- mean(tau[1:n])
+#   print(paste0("True SATE: ", true_sate, ". Estimated: ", sate, ". Abs. diff: ", abs(sate - true_sate))) 
+# }
 
 # Gaussian processes
 # makeGPBQModelMatrix <- function(df, treatment) {
@@ -138,18 +139,18 @@ GPBQResults <- computeGPBQEmpirical(
   candidateY=candidateY, 
   kernel="matern32", 
   lengthscale=lengthscale, 
-  epochs=n_seqential
+  epochs=n_seqential,
+  sequential=sequential
 )
  
 # BART
 source("bcf/BART.R")
-BARTResults <- computeBARTWeighted(trainX, trainY, candidateX, candidateY, n_seqential, num_cv=num_cv, linear=linear)
-print(paste0("True ATE: ", true_sate, " . Estimated: ", BARTResults$meanValueBART, ". Abs. diff: ", abs(BARTResults$meanValueBART - sate)))
+BARTResults <- computeBARTWeighted(trainX, trainY, candidateX, candidateY, n_seqential, num_cv=num_cv, linear=linear, save_posterior=TRUE, sequential=sequential)
+print(paste0("True ATE: ", 3, " . Estimated: ", BARTResults$meanValueBART, ". Abs. diff: ", abs(BARTResults$meanValueBART - 3)))
 
 # Bayesian Quadrature methods: with BART and Gaussian Process
 print("Final ATE:")
-print(c("Actual integral:", true_sate))
-print(c("BCF integral:", sate))
+print(c("Actual integral:", 3))
 print(c("BART integral:", BARTResults$meanValueBART[(n_seqential+1)]))
 print(c("GP integral:", GPBQResults$meanValueGP[(n_seqential+1)]))
 
@@ -160,4 +161,4 @@ results <- data.frame(
   "actual" = rep(3, n_seqential+1)
 )
 
-write.csv(results, paste0("bcf/results/exp", which_experiment, "_", "sigma", sigma, "_", ntrain, "_", num_cv, ".csv"))
+write.csv(results, paste0("bcf/results/exp", which_experiment, "_sigma", sigma, "_ntrain", ntrain, "_nseq", n_seqential, "_homo", homogeneous, "_sequential", sequential, "_", num_cv, ".csv"))

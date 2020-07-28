@@ -11,11 +11,11 @@ g <- function(w) {
 
 treatment_func <- function(x, homogeneous) {
   # Homogeneous
-  if (homogeneous) {
+  if (homogeneous==1) {
     return(rep(3, dim(x)[1]))
   } else {
     # Heterogeneous
-    return(1 + 2 * x[, 2] * x[, 5])
+    return(1 + 2 * x[, 2] * as.integer(x[, 5]))
   }
 }
 

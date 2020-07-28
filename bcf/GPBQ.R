@@ -36,7 +36,7 @@ maternKernelWrapper_2 <- function(lengthscale=1, sigma=1) {
   }
 }
 
-computeGPBQEmpirical <- function(X, Y, candidateX, candidateY, epochs, kernel="rbf", lengthscale, sequential=TRUE, linear=1) 
+computeGPBQEmpirical <- function(X, Y, candidateX, candidateY, epochs, kernel="rbf", lengthscale, sequential=1, linear=1) 
 {
   meanValueGP <- c()
   varianceGP <- c()
@@ -99,9 +99,13 @@ computeGPBQEmpirical <- function(X, Y, candidateX, candidateY, epochs, kernel="r
     print(paste("GPBQ: Epoch =", p))
     K_prime <- diag(N+p)
     K_prime[1:(N+p-1), 1:(N+p-1)] <- K
-    candidate_Var <- diag(K_star_star - K_star %*% solve(K + diag(jitter, nrow(K)), t(K_star))) * prob_density(notOneHotX, linear)
-    
-    index <- which(candidate_Var == max(candidate_Var))[1]
+
+    if (sequential==1) {
+      candidate_Var <- diag(K_star_star - K_star %*% solve(K + diag(jitter, nrow(K)), t(K_star))) * prob_density(notOneHotX, linear)
+      index <- which(candidate_Var == max(candidate_Var))[1]
+    } else {
+      index <- sample(1:length(candidateY), 1)
+    }
     kernel_new_entry <- kernel(matrix(candidateX[index,], nrow=1), X)
     K_prime[N+p,1:(N+p-1)] <- kernel_new_entry
     K_prime[1:(N+p-1),N+p] <- kernel_new_entry
