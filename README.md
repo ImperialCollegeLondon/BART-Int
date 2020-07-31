@@ -5,6 +5,8 @@ Authors: Harrison Zhu, François-Xavier Briol, Xing Liu, Ruya Kang, Zhichao Shen
 
 ## Code directory ##
 
+The `causal-inference` branch contains code relating to "Some Links Between Causal Inference and Bayesian Probabilistic Numerical Integration".
+
     .
     |
     └── README.md
