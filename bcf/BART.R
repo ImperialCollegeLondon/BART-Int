@@ -28,13 +28,6 @@ computeBARTWeighted <- function(trainX, trainY, candidateX, candidateY, num_iter
     model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 3L, nskip = 1000, ndpost = 5000, ntree = 50, k = 2, usequant = FALSE)
     # model <- wbart(bartModelMatrix(trainData[,1:dim]), trainData[,(dim+1)], bartModelMatrix(candidateX), keepevery=3L, nskip=500L, ndpost=5000L, ntree=50)
     sink()
-    
-    pred <- predict(model, fullData)
-    if (save_posterior == TRUE) {
-      posterior_samples <- list("posterior_samples" = rowMeans(pred))
-      save(posterior_samples, file = paste(save_posterior_dir, "/posterior_BART_synthetic_sequential%s_%s_%s" %--% c(sequential, i, num_cv), ".RData", sep = ""))
-    }
-
     pred_opposite <- predict(model, oppositeFullData)
     treatment_effects <- pred - pred_opposite
     treatment_effects[, fullData[, dim]==0] <- -treatment_effects[, fullData[, dim]==0] 
@@ -81,7 +74,7 @@ computeBARTWeighted <- function(trainX, trainY, candidateX, candidateY, num_iter
     treatment_effects[, fullData[, dim]==0] <- -treatment_effects[, fullData[, dim]==0] 
     if (save_posterior == TRUE) {
       posterior_samples <- list("posterior_samples" = rowMeans(treatment_effects))
-      save(posterior_samples, file = paste(save_posterior_dir, "/posterior_BART_synthetic_sequential%s_%s_%s" %--% c(sequential, i, num_cv), ".RData", sep = ""))
+      save(posterior_samples, file = paste(save_posterior_dir, "/posterior_BART_synthetic_sequential", sequential, "_", i, "_", num_cv, ".RData", sep = ""))
     }
     meanValue[i] <- mean(treatment_effects)
     # standardDeviation[i] <- sd(trainData[, dim+1]) 

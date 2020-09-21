@@ -65,3 +65,5 @@ env/
 
 # BCF example script
 /bcf/rev.simus.R
+*.sub
+*.sh
