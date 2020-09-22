@@ -77,9 +77,9 @@ computeGPBQ_matern <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale
   cov <- kernel(int.points.1, int.points.2)
   var.firstterm <- mean(cov[upper.tri(cov)])
   if (measure == "uniform"){
-    int.points.1 <- replicate(dim, runif(10000))
+    int.points.1 <- replicate(dim, runif(1000000))
   } else if (measure == "gaussian") {
-    int.points.1 <- replicate(dim, rtnorm(10000, mean = 0.5, lower=0, upper=1))
+    int.points.1 <- replicate(dim, rtnorm(1000000, mean = 0.5, lower=0, upper=1))
   }
   cov <- kernel(int.points.1, X)
   z <- colMeans(cov) 
@@ -182,9 +182,9 @@ computeGPBQ <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale=1, seq
   cov <- kernelMatrix(kernel, int.points.1, int.points.2)
   var.firstterm <- mean(cov[upper.tri(cov)])
   if (measure == "uniform"){
-    int.points.1 <- replicate(dim, runif(10000))
+    int.points.1 <- replicate(dim, runif(1000000))
   } else if (measure == "gaussian") {
-    int.points.1 <- replicate(dim, rtnorm(10000, mean = 0.5, lower=0, upper=1))
+    int.points.1 <- replicate(dim, rtnorm(1000000, mean = 0.5, lower=0, upper=1))
   }
   cov <- kernelMatrix(kernel, int.points.1, X)
   z <- colMeans(cov) 
