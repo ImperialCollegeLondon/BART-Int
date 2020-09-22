@@ -76,6 +76,11 @@ computeGPBQ_matern <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale
   }
   cov <- kernel(int.points.1, int.points.2)
   var.firstterm <- mean(cov[upper.tri(cov)])
+  if (measure == "uniform"){
+    int.points.1 <- replicate(dim, runif(10000))
+  } else if (measure == "gaussian") {
+    int.points.1 <- replicate(dim, rtnorm(10000, mean = 0.5, lower=0, upper=1))
+  }
   cov <- kernel(int.points.1, X)
   z <- colMeans(cov) 
   covInverse <- chol2inv(chol(K + diag(jitter, nrow(K))))
@@ -92,7 +97,13 @@ computeGPBQ_matern <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale
    
     print(paste("GPBQ: Epoch =", p))
     candidateSetNum <- 100
-	  candidateSet <- replicate(dim, runif(candidateSetNum))
+    if (measure == "uniform") {
+      candidateSet <- replicate(dim, runif(candidateSetNum))
+      weights <- 1
+    } else if (measure == "gaussian") {
+      candidateSet <- replicate(dim, rtnorm(candidateSetNum, mean = 0.5, lower = 0, upper = 1))
+      weights <- dtnorm(candidateSet, mean=0.5, lower = 0, upper = 1)
+    }
     K_prime <- diag(N+p-1)
     K_prime[1:(N+p-2), 1:(N+p-2)] <- K
     
@@ -100,6 +111,7 @@ computeGPBQ_matern <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale
       K_star_star <- kernel(candidateSet)
       K_star <- kernel(candidateSet, X)
       candidate_Var <- diag(K_star_star - K_star %*% chol2inv(chol(K + diag(jitter, N+p-2))) %*% t(K_star))
+      candidate_Var <- candidate_Var * weights
       index <- which(candidate_Var == max(candidate_Var))[1]
     }
     else {    
@@ -169,6 +181,11 @@ computeGPBQ <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale=1, seq
   }
   cov <- kernelMatrix(kernel, int.points.1, int.points.2)
   var.firstterm <- mean(cov[upper.tri(cov)])
+  if (measure == "uniform"){
+    int.points.1 <- replicate(dim, runif(10000))
+  } else if (measure == "gaussian") {
+    int.points.1 <- replicate(dim, rtnorm(10000, mean = 0.5, lower=0, upper=1))
+  }
   cov <- kernelMatrix(kernel, int.points.1, X)
   z <- colMeans(cov) 
   covInverse <- chol2inv(chol(K + diag(jitter, nrow(K))))
@@ -185,6 +202,13 @@ computeGPBQ <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale=1, seq
    
     print(paste("GPBQ: Epoch =", p))
     candidateSetNum <- 100
+    if (measure == "uniform") {
+      candidateSet <- replicate(dim, runif(candidateSetNum))
+      weights <- 1
+    } else if (measure == "gaussian") {
+      candidateSet <- replicate(dim, rtnorm(candidateSetNum, mean = 0.5, lower = 0, upper = 1))
+      weights <- dtnorm(candidateSet, mean=0.5, lower = 0, upper = 1)
+    }
 	  candidateSet <- replicate(dim, runif(candidateSetNum))
     K_prime <- diag(N+p-1)
     K_prime[1:(N+p-2), 1:(N+p-2)] <- K
@@ -193,6 +217,7 @@ computeGPBQ <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale=1, seq
       K_star_star <- kernelMatrix(kernel, candidateSet)
       K_star <- kernelMatrix(kernel, candidateSet, X)
       candidate_Var <- diag(K_star_star - K_star %*% chol2inv(chol(K + diag(jitter, N+p-2))) %*% t(K_star))
+      candidate_Var <- candidate_Var * weights
       index <- which(candidate_Var == max(candidate_Var))[1]
     }
     else {    
