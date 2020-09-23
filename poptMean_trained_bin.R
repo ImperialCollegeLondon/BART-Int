@@ -2,11 +2,34 @@ library(lhs)
 library(dbarts)
 library(data.tree)
 library(matrixStats)
+library(EnvStats)
+library(ks)
 library(caret)
 set.seed(0)
 source("src/survey_design/bartMean.R")
 source("src/survey_design/gpMean.R")
 source("src/optimise_gp.R")
+
+build_density <- function(data) {
+  # data: non-one-hot encoded dataframe
+  # usually this is rbind(nonOneHotTrainX, nonOneHotCandidateX)
+  data[, c(1,2,4,5,6,7)] <- sapply(data[, c(1,2,4,5,6,7)], as.character); 
+  data$category <- apply(data[, c(1,2,4,5,6,7)], 1, paste, collapse = "-"); 
+  data$category <- sapply(sapply(data$category, as.factor), as.numeric)
+  
+  density_func <- function(x) {
+    # x is a non-one-hot encoded dataframe
+    p_education <- predict(ks::kde(data$Education, h=1), x=x$Education)
+    
+    x[, c(1,2,4,5,6,7)] <- sapply(x[, c(1,2,4,5,6,7)], as.character); 
+    x$category <- apply(x[, c(1,2,4,5,6,7)], 1, paste, collapse = "-"); 
+    x$category <- sapply(sapply(x$category, as.factor), as.numeric)
+    p_discrete <- demp(x$category, data$category)    
+    
+    return (p_education * p_discrete)
+  }
+  return (density_func)  
+}
 
 # paths to save results and plots
 resultPath <- "results/survey_design/"
@@ -70,12 +93,14 @@ for (num_cv in num_cv_start:num_cv_end) {
   # one-hot encoding
   trainX.num <- trainX
   candidateX.num <- candidateX
+  trainX.num[, c(1,2,4,5,6,7)] <- sapply(trainX[, c(1,2,4,5,6,7)], as.numeric)
+  candidateX.num[, c(1,2,4,5,6,7)] <- sapply(candidateX[, c(1,2,4,5,6,7)], as.numeric)
   dummyFullData <- dummyVars("~.", data = rbind(trainX, candidateX))
   trainX <- data.frame(predict(dummyFullData, newdata = trainX))
   candidateX <- data.frame(predict(dummyFullData, newdata = candidateX))
   # compute population average income estimates by BARTBQ
   t0 <- proc.time()
-  BARTresults <- computeBART(trainX, trainY, candidateX, candidateY, num_iterations = num_new_surveys, save_posterior = TRUE, num_cv = num_cv)
+  BARTresults <- computeBART(trainX.num, trainX, trainY, candidateX.num, candidateX, candidateY, num_iterations = num_new_surveys, save_posterior = TRUE, num_cv = num_cv)
   t1 <- proc.time()
   bartTime <- (t1 - t0)[[1]]
   # population average income estimation by Monte Carlo
@@ -84,7 +109,7 @@ for (num_cv in num_cv_start:num_cv_end) {
   # GPBQ
   lengthscale <- optimise_gp_r(as.matrix(trainX), trainY, kernel = "matern32", epochs = 500)
   t0 <- proc.time()
-  GPresults <- computeGPBQEmpirical(as.matrix(trainX), trainY, as.matrix(candidateX), candidateY, epochs = num_new_surveys, kernel = "matern32", lengthscale = lengthscale)
+  GPresults <- computeGPBQEmpirical(trainX.num, as.matrix(trainX), trainY, candidateX.num, as.matrix(candidateX), candidateY, epochs = num_new_surveys, kernel = "matern32", lengthscale = lengthscale)
   t1 <- proc.time()
   GPTime <- (t1 - t0)[[1]]
 

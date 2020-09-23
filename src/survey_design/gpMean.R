@@ -28,14 +28,16 @@ maternKernelWrapper_2 <- function(lengthscale=1, sigma=1) {
   }
 }
 
-computeGPBQEmpirical <- function(X, Y, candidateSet, candidateY, epochs, kernel="rbf", lengthscale, sequential=TRUE) 
+computeGPBQEmpirical <- function(nonOneHotX, X, Y, nonOneHotCandidateSet, candidateSet, candidateY, epochs, kernel="rbf", lengthscale, sequential=TRUE) 
 {
   meanValueGP <- c()
   varianceGP <- c()
   condition <- c()
+
+  emp_density_func <- build_density(rbind(nonOneHotX, nonOneHotCandidateSet))
+  weights <- emp_density_func(nonOneHotCandidateSet)
    
   N <- dim(X)[1]
-
   K <- matrix(0,nrow=N,ncol=N)
   jitter = 1e-6
 
@@ -74,6 +76,7 @@ computeGPBQEmpirical <- function(X, Y, candidateSet, candidateY, epochs, kernel=
     K_prime <- diag(N+p-1)
     K_prime[1:(N+p-2), 1:(N+p-2)] <- K
     candidate_Var <- diag(K_star_star - K_star %*% solve(K + diag(jitter, nrow(K)), t(K_star)))
+    candidate_Var <- candidate_Var * weights
     
     index <- which(candidate_Var == max(candidate_Var))[1]
     kernel_new_entry <- kernel(matrix(candidateSet[index,], nrow=1), X)
@@ -93,6 +96,7 @@ computeGPBQEmpirical <- function(X, Y, candidateSet, candidateY, epochs, kernel=
     
     # update candidateSet
     candidateSet <- candidateSet[-index,]
+    weights <- weights[-index]
     candidateY <- candidateY[-index]
     
     # add in extra term obtained by integration

@@ -67,3 +67,4 @@ env/
 *.sh
 *.e*
 *.o*
+integrationMainParallel.R 
