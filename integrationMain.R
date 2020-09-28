@@ -91,6 +91,9 @@ if (measure == "uniform") {
 } else if (measure == "gaussian") {
   trainX <- replicate(dim, rtnorm(50 * dim, mean = 0.5, lower = 0, upper = 1))
   trainY <- genz(trainX)
+} else if (measure == "exponential") {
+  trainX <- replicate(dim, rexp(50 * dim))
+  trainY <- genz(trainX)
 }
 
 for (num_cv in 1:20) {
