@@ -259,7 +259,7 @@ BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequentia
   sink("/dev/null")
   # model <- bart(trainData[,1:dim], trainData[,dim+1], keeptrees=TRUE, keepevery=5L, nskip=500, ndpost=1500, ntree=50, k = 2)
   # sigest = 0.0001 ensures that there is almost no noise
-  model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 500, ndpost = 1500, ntree = 200, k = 2, sigest=0.0001)
+  model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 50, k = 2, sigest=0.1)
   sink()
   # obtain posterior samples
   integrals <- sampleIntegrals(model, dim, measure)
@@ -285,7 +285,7 @@ BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequentia
     # first build BART and scale mean and standard deviation
     sink("/dev/null")
     # sigest = 0.0001 ensures that there is almost no noise
-    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 500, ndpost = 1500, ntree = 200, k = 2, sigest=0.0001)
+    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 50, k = 2, sigest=0.1)
     # model <- bart(trainData[,1:dim], trainData[,dim+1], keeptrees=TRUE, keepevery=5L, nskip=500, ndpost=1500, ntree=50, k = 2)
     # model <- bart(trainData[,1:dim], trainData[,dim+1], keeptrees=TRUE, keepevery=20L, nskip=1000, ndpost=2000)
     # model <- bart(trainData[,1:dim], trainData[,dim+1], keeptrees=TRUE, keepevery=20L, nskip=1000, ndpost=10000, ntree=50, k = 2)
@@ -365,7 +365,7 @@ BART_posterior <- function(dim, trainX, trainY, numNewTraining, FUN, sequential,
     # first build BART and scale mean and standard deviation
     sink("/dev/null")
     # sigest = 0.0001 ensures that there is almost no noise
-    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 50, k = 2, sigest = 0.0001)
+    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 200, k = 2, sigest=0.1)
     sink()
     # obtain posterior samples
     integrals <- sampleIntegrals(model, dim, measure)

@@ -56,9 +56,9 @@ print("Testing with: %s" %--% genzFunctionName)
 
 # prepare training dataset
 if (measure == "uniform") {
-  trainX <- replicate(dim, runif(50))
+  trainX <- replicate(dim, runif(20))
 } else if (measure == "gaussian") {
-  trainX <- replicate(dim, rtnorm(50, lower = 0, upper = 1))
+  trainX <- replicate(dim, rtnorm(20, lower = 0, upper = 1))
 }
 trainY <- genz(trainX)
 source("src/BARTBQ.R")
@@ -112,7 +112,7 @@ lengthscale <- optimise_gp_r(trainX, trainY, kernel = "matern32", epochs = 500)
 source("src/GPBQ.R")
 t0 <- proc.time()
 # need to add in function to optimise the hyperparameters
-predictionGPBQ <- computeGPBQ(trainX, trainY, dim, epochs = num_iterations, kernel = "matern32", FUN = genz, lengthscale, sequential, measure)
+predictionGPBQ <- computeGPBQ_matern(trainX, trainY, dim, epochs = num_iterations, kernel = "matern32", FUN = genz, lengthscale, sequential, measure)
 t1 <- proc.time()
 GPTime <- (t1 - t0)[[1]]
 
@@ -123,7 +123,7 @@ K <- predictionGPBQ$K
 X <- predictionGPBQ$X
 # Y <- Y[order(X)]
 Y <- predictionGPBQ$Y
-maternKernel <- maternKernelWrapper(lengthscale = lengthscale)
+maternKernel <- maternKernelWrapper_2(lengthscale = lengthscale)
 
 k_xstar_x <- kernelMatrix(maternKernel, matrix(x_plot, ncol = 1), X)
 k_xstar_xstar <- kernelMatrix(maternKernel,
@@ -143,57 +143,65 @@ GPdensity <- dnorm(
 )
 KDE_BART <- density(integrals)
 
-par(mfrow = c(1, 2), pty = "s")
+pdf("figures_code/posterior_step.pdf", width=9, height=3)
+par(mfrow = c(1,3), pty = "s")
 plot(
-  seq(0, 1, 0.01),
-  GPdensity,
-  ty = "l",
-  col = "dodgerblue",
-  xlim = c(0.3, 0.7),
-  ylim = c(0, 100),
+  seq(0, 1, 0.01), 
+  GPdensity, 
+  ty="l", 
+  col = "dodgerblue", 
+  xlim = c(0.3,0.7), 
+  ylim = c(0, 60),
   xlab = "x",
   ylab = "Posterior density",
-  cex.lab = 1.3,
+  cex.lab = 1.7,
   cex.axis = 1.7,
-  lwd = 3
+  lwd=3
 )
-points(KDE_BART, ty = "l", col = "orangered", lwd = 3)
-abline(v = 0.5)
-legend("topright", legend = c("BART-Int", "GP-BQ", "Actual"),
-       col = c("orangered", "dodgerblue", "black"), lty = c(1, 1, 1), cex = 0.8)
+points(KDE_BART, ty="l", col = "orangered", lwd=3)
+abline(v=0.5, lwd=3)
+legend("topleft", legend=c("BART", "GP", expression(Pi*"[f]")),
+       col=c("orangered", "dodgerblue", "black"), lty = c(1,1,1), cex=2.4, bty="n")
 
-a <- density(integrals)$y
-# plot(trainX, trainY, ylim=c(-0.2, 1.3))
-plot(x_plot,
-     gp_post_mean,
-     col = "dodgerblue",
-     cex = 0.2,
-     ty = "l",
-     ylim = c(-0.2, 1.5),
-     xlab = "x",
-     ylab = "y",
-     cex.lab = 1.3,
-     cex.axis = 1.9,
-     lwd = 3
- )
-points(trainX[order(trainX),], trainY[order(trainX),], ty = "l", lwd = 3)
-points(trainX[order(trainX),], trainY[order(trainX),], col = "black", bg = 'black', pch = 21, lwd = 3)
-polygon(c(x_plot, rev(x_plot)),
-        c(
-          gp_post_mean + 2 * gp_post_sd,
-          rev(gp_post_mean - 2 * gp_post_sd)
-        ),
-        col = adjustcolor("dodgerblue", alpha.f = 0.10),
-        border = "dodgerblue", lty = c("dashed", "solid"))
-# points(trainX, trainY, col = "blue")
-polygon(c(x_plot, rev(x_plot)),
-        c(
-          y_pred_mean + 2 * y_pred_sd,
-          rev(y_pred_mean - 2 * y_pred_sd)
-        ),
-        col = adjustcolor("orangered", alpha.f = 0.10),
-        border = "orangered", lty = c("dashed", "solid"))
-points(x_plot, y_pred_mean, col = "orangered", cex = 0.2, ty = "l", lwd = 3)
+plot(x_plot, y_pred_mean, col = "orangered", ty="l", lwd=3,ylim=c(-0.2, 1.5),
+     ylab = expression(f(x)), xlab = "x",      cex.lab = 1.7,
+     cex.axis = 1.7)
+# points(trainX, trainY, col = "black")
+points(c(0,0.5,0.5, 1), c(0,0,1,1), ty="l", lwd=1, col="black")
+
+for (i in seq(1, 500, 10)) {
+  points(rep(x_plot[i], 1000), y_pred[,i], col="orangered",bg='orangered',
+         cex=0.2, alpha=0.01, pch=16)
+}
 # legend("topright", legend=c("BART-Int", "GP-BQ"),
 #        col=c("orangered", "dodgerblue"), cex=1, lty = c(1,1,1,1))
 
+
+a <-density(integrals)$y 
+# plot(trainX, trainY, ylim=c(-0.2, 1.3))
+plot(x_plot, 
+     gp_post_mean, 
+     col = "dodgerblue", 
+     cex=0.2, 
+     ty="l", 
+     ylim=c(-0.2, 1.5),
+     xlab = "x",
+     ylab = expression(f(x)),
+     cex.lab = 1.7,
+     cex.axis = 1.7,
+     lwd=3
+)
+
+
+points(c(0,0.5,0.5, 1), c(0,0,1,1), ty="l", lwd=1, col="black")
+# points(trainX[order(trainX),], trainY[order(trainX), ], col = "black", bg='black', pch=21, lwd=3)
+polygon(c(x_plot, rev(x_plot)), 
+        c(
+          gp_post_mean + 1.96*gp_post_sd, 
+          rev(gp_post_mean - 1.96*gp_post_sd)
+        ), 
+        col = adjustcolor("dodgerblue", alpha.f = 0.10), 
+        border = "dodgerblue", lty = c("dashed", "solid"))
+# points(trainX, trainY, col = "black")
+
+dev.off()

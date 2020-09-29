@@ -16,7 +16,7 @@
 }
 ylims <- as.double(commandArgs(TRUE))
 mape_error <- read.csv("results/genz/mapeValues.csv")
-num_cv_plot=13
+num_cv_plot=18
 for (i in c(7)){
   for (j in c(1)){
     for (sequential in c("")){
@@ -41,7 +41,7 @@ for (i in c(7)){
       for (num_cv in c(num_cv_plot)) {
         # Set path for estimated integral values
         fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "Uniform_", toString(num_cv),'.csv', sep='')
-        filePath <- paste('step_posteriors', toString(whichGenz), fileName, sep='/')
+        filePath <- paste('results/genz', toString(whichGenz), fileName, sep='/')
         
         # Retrieve estimated integral values
         integrals <- read.csv(filePath, header=TRUE, sep=",", stringsAsFactors = FALSE)
@@ -59,6 +59,7 @@ for (i in c(7)){
         }
       }
     }
+    plot_points <- seq(0, 50, 5)
     pdf(paste("Figures/genz", "/combined_", toString(whichGenz), ".pdf", sep = ""), width = 5, height = 5)
     par(pty = "s")
     plot(integrals$epochs+50, 
@@ -67,7 +68,7 @@ for (i in c(7)){
          ylab = "Integral",
          xlab = expression("n'"+n[seq]),
          col = "chartreuse4",
-         ylim = c(0.4, 0.65),
+         ylim = c(0.45, 0.59),
          cex.lab = 1.7,
          cex.axis = 1.7
     )
@@ -103,8 +104,8 @@ for (i in c(7)){
                col = "orangered", bg='orangered', cex=0.1)
       }
     }
-    legend("topleft", legend=c("BART-Int", "GP-BQ", "MI"),
-          col=c("orangered", "dodgerblue", "chartreuse4"), cex=1.6, lty = c(1,1,1,1), bty="n")
+    legend("topleft", legend=c("BART", "GP", "MI", expression(Pi*"[f]")),
+           col=c("orangered", "dodgerblue", "chartreuse4", "black"), cex=1.4, lty = c(1,1,1,1), bty="n", ncol=2)
     abline(h=integrals$actual)
     dev.off()
   }
