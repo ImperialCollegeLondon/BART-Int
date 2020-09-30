@@ -55,7 +55,7 @@ fillProbabilityForNode <- function(oneTree, cutPoints, cut, measure)
       oneTree$rightChild$probability <- 1 - oneTree$leftChild$probability
     } else if (measure == "exponential") {
       normalizingConst <- pexp(cut[2, oneTree$splitVar]) - pexp(cut[1, oneTree$splitVar])
-      oneTree$leftChild$probability <- pexp(decisionRule) - pexp(cut[1, oneTree$splitVar]) / normalizingConst
+      oneTree$leftChild$probability <- (pexp(decisionRule) - pexp(cut[1, oneTree$splitVar])) / normalizingConst
       oneTree$rightChild$probability <- 1 - oneTree$leftChild$probability      
     }
 
