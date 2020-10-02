@@ -115,7 +115,7 @@ for (num_cv in 1:20) {
     lengthscale <- optimise_gp_r(trainX, trainY, kernel = whichKernel, epochs=500)
     print("...Finished training for the lengthscale")
   }
-  source("src/GPBQ.R")
+  source("src/GPBQ_highdim.R")
   t0 <- proc.time()
   # need to add in function to optimise the hyperparameters
   predictionGPBQ <- computeGPBQ_matern(

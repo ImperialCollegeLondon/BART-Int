@@ -107,6 +107,8 @@ for (i in c(7)){
   cat(genzFunctionName, "done", '\n')
 }
 
+print(bestMethod)
+print(mapeValues)
 write.csv(bestMethod, file = "results/genz/bestMethods.csv")
 write.csv(resultsAll, file = "results/genz/allEstimates.csv")
 write.csv(mapeValues, file = "results/genz/mapeValues.csv")
