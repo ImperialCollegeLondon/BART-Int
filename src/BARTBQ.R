@@ -312,7 +312,7 @@ BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequentia
       weights <- dtnorm(candidateSet, mean=0.5, lower = 0, upper = 1)
     } else if (measure == "exponential") {
       candidateSet <- replicate(dim, rexp(candidateSetNum))
-      weights <- dexp(candidateSet)
+      weights <- dexp(candidateSet[,1]) * dexp(candidateSet[,2])
     }
 
     # predict the values

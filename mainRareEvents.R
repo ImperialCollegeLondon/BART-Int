@@ -61,6 +61,15 @@ if (whichRare == 1) {
   rareFunction <- function(xx) { return(indicator_greater(xx, threshold = 3)) }
   rareFunctionName <- deparse(substitute(indicator_greater))
 }
+if (whichRare == 2) { 
+  rareFunction <- function(xx) { return(indicator_square_greater(xx, threshold = 5)) }
+  rareFunctionName <- deparse(substitute(indicator_square_greater))
+}
+
+if (whichRare == 3) {
+  rareFunction <- function(xx) { return(portfolio_loss(xx)) }
+  rareFunctionName <- deparse(substitute(portfolio_loss))
+}
 
 print("Testing with: %s" %--% rareFunctionName)
 
@@ -108,7 +117,7 @@ for (num_cv in 1:20) {
     FUN = rareFunction, 
     trainX, 
     trainY, 
-    numSamples = num_iterations, 
+    numSamples = 10000, 
     dim, 
     measure
   )
@@ -130,7 +139,7 @@ for (num_cv in 1:20) {
     trainX,
     trainY,
     dim,
-    epochs = num_iterations,
+    epochs = 100,
     kernel = whichKernel,
     FUN = rareFunction,
     lengthscale,
@@ -142,7 +151,7 @@ for (num_cv in 1:20) {
   
   # Bayesian Quadrature methods: with BART, Monte Carlo Integration and Gaussian Process respectively
   print("Final Results:")
-  # print(c("Actual integral:", real))
+  print(c("Actual integral:", 1-pexp(3)))
   print(c("BART integral:", predictionBART$meanValueBART[num_iterations]))
   print(c("MI integral:", predictionMonteCarlo$meanValueMonteCarlo[num_iterations]))
   print(c("GP integral:", predictionGPBQ$meanValueGP[num_iterations]))

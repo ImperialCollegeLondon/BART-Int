@@ -110,7 +110,7 @@ computeGPBQ_matern <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale
       weights <- dtnorm(candidateSet, mean=0.5, lower = 0, upper = 1)
     } else if (measure == "exponential") {
       candidateSet <- replicate(dim, rexp(candidateSetNum))
-      weights <- dexp(candidateSet)      
+      weights <- dexp(candidateSet[,1]) * dexp(candidateSet[,2])
     }
     K_prime <- diag(N+p-1)
     K_prime[1:(N+p-2), 1:(N+p-2)] <- K
