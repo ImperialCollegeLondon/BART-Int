@@ -60,11 +60,12 @@ fillProbabilityForNode <- function(oneTree, cutPoints, cut, measure)
     }
 
     cut[, oneTree$splitVar] = c(0, decisionRule)
-
     fillProbabilityForNode(oneTree$leftChild, cutPoints, cut, measure)
-
+    
     cut[, oneTree$splitVar] = c(decisionRule, 1)
-
+    if (measure == "exponential") {
+      cut[, oneTree$splitVar] = c(decisionRule, Inf)
+    }
     fillProbabilityForNode(oneTree$rightChild, cutPoints, cut, measure)
 
   } else if (is.null(oneTree$probability)) {
