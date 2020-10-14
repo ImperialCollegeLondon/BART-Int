@@ -56,7 +56,7 @@ if (as.double(args[7]) == 1 & !is.na(args[7])) {
 print(c(dim, num_iterations, whichRare))
 source("src/rareFunctions.R") # rare function to test
 
-if (whichRare < 1 | whichRare > 1) { stop("undefined rare function. Change 3rd argument to 1") }
+if (whichRare < 1 | whichRare > 3) { stop("undefined rare function. Change 3rd argument to 1") }
 if (whichRare == 1) { 
   rareFunction <- function(xx) { return(indicator_greater(xx, threshold = 3)) }
   rareFunctionName <- deparse(substitute(indicator_greater))
