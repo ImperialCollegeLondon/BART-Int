@@ -32,18 +32,17 @@ terminalProbability <- function(currentNode)
 fillProbabilityForNode <- function(oneTree, cutPoints, cut, measure)
 
 #'Fill Non-Terminal Node Probability
-#' 
-#'@description This function calculates the prior probability of all the non-terminal tree nodes 
+#'
+#'@description This function calculates the prior probability of all the non-terminal tree nodes
 #'and fill that node with the prior probability.
-#' 
+#'
 #'@param currentNode Node; Non-terminal nodes in the tree
 #'
 #'@return The non-terminal tree nodes filled with prior probability.
 
 {
-  if (!oneTree$isLeaf) {
+  if (!is.null(oneTree$leftChild)) {
     decisionRule <- cutPoints[[oneTree$splitVar]][oneTree$splitIndex]
-
     if (measure == "uniform") {
       oneTree$leftChild$probability <- (decisionRule - cut[1, oneTree$splitVar]) / (cut[2, oneTree$splitVar] - cut[1, oneTree$splitVar])
       oneTree$rightChild$probability <- (cut[2, oneTree$splitVar] - decisionRule) / (cut[2, oneTree$splitVar] - cut[1, oneTree$splitVar])
@@ -54,22 +53,18 @@ fillProbabilityForNode <- function(oneTree, cutPoints, cut, measure)
     } else if (measure == "exponential") {
       normalizingConst <- pexp(cut[2, oneTree$splitVar]) - pexp(cut[1, oneTree$splitVar])
       oneTree$leftChild$probability <- (pexp(decisionRule) - pexp(cut[1, oneTree$splitVar])) / normalizingConst
-      oneTree$rightChild$probability <- 1 - oneTree$leftChild$probability      
+      oneTree$rightChild$probability <- 1 - oneTree$leftChild$probability
     }
-    
+
     leftCut = cut
     rightCut = cut
-    
+
     leftCut[, oneTree$splitVar] = c(cut[1, oneTree$splitVar], decisionRule)
     fillProbabilityForNode(oneTree$leftChild, cutPoints, leftCut, measure)
     rightCut[, oneTree$splitVar] = c(decisionRule, cut[2, oneTree$splitVar])
-    
-    if (measure == "exponential") {
-      rightCut[, oneTree$splitVar] = c(decisionRule, rightCut[2, oneTree$splitVar])
-    }
-    fillProbabilityForNode(oneTree$rightChild, cutPoints, rightCut, measure)
 
-  } else {
+    fillProbabilityForNode(oneTree$rightChild, cutPoints, rightCut, measure)
+  } else if (is.null(oneTree$probability)) {
     oneTree$probability <- 1
   }
 
@@ -159,7 +154,7 @@ singleTreeSum <- function(treeNum, model, drawNum, dim, measure)
     cut <- array(c(0, Inf), c(2, dim))
   }
 
-  treeList <- getTree(model$fit, 1, drawNum, 22)
+  treeList <- getTree(model$fit, 1, drawNum, treeNum)
 
   selectedTree <- FromListSimple(treeList)
 
