@@ -39,16 +39,12 @@ if (as.double(args[5]) == 1 | is.na(as.double(args[5]))) {
 cat("Sequantial design set to", sequential, "\n")
 # prior measure over the inputs
 # uniform by default
-if (as.character(args[6]) != "gaussian" | is.na(args[6])) {
-  measure <- "uniform"
-} else {
-  measure <- as.character(args[6])
-}
+measure="exponential"
 cat("Integral Measure:", measure, "\n")
 
 
 # save posterior samples
-if (as.double(args[7]) == 1 & !is.na(args[7])) {
+if (as.double(args[5]) == 1 & !is.na(args[7])) {
   save_posterior <- TRUE
 } else {
   save_posterior <- FALSE
@@ -117,11 +113,11 @@ for (num_cv in 1:20) {
     FUN = rareFunction, 
     trainX, 
     trainY, 
-    numSamples = 10000, 
+    numSamples = num_iterations, 
     dim, 
     measure
   )
-  t1 <- proc.time()
+  # t1 <- proc.time()
   MITime <- (t1 - t0)[[1]]
   
   # Bayesian Quadrature with Gaussian Process
@@ -139,7 +135,7 @@ for (num_cv in 1:20) {
     trainX,
     trainY,
     dim,
-    epochs = 100,
+    epochs = num_iterations,
     kernel = whichKernel,
     FUN = rareFunction,
     lengthscale,
@@ -151,7 +147,7 @@ for (num_cv in 1:20) {
   
   # Bayesian Quadrature methods: with BART, Monte Carlo Integration and Gaussian Process respectively
   print("Final Results:")
-  print(c("Actual integral:", 1-pexp(3)))
+  # print(c("Actual integral:", 1-pexp(3)))
   print(c("BART integral:", predictionBART$meanValueBART[num_iterations]))
   print(c("MI integral:", predictionMonteCarlo$meanValueMonteCarlo[num_iterations]))
   print(c("GP integral:", predictionGPBQ$meanValueGP[num_iterations]))
