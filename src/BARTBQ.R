@@ -41,9 +41,7 @@ fillProbabilityForNode <- function(oneTree, cutPoints, cut, measure)
 #'@return The non-terminal tree nodes filled with prior probability.
 
 {
-
-  if (!is.null(oneTree$leftChild)) {
-
+  if (!oneTree$isLeaf) {
     decisionRule <- cutPoints[[oneTree$splitVar]][oneTree$splitIndex]
 
     if (measure == "uniform") {
@@ -58,20 +56,21 @@ fillProbabilityForNode <- function(oneTree, cutPoints, cut, measure)
       oneTree$leftChild$probability <- (pexp(decisionRule) - pexp(cut[1, oneTree$splitVar])) / normalizingConst
       oneTree$rightChild$probability <- 1 - oneTree$leftChild$probability      
     }
-
-    cut[, oneTree$splitVar] = c(cut[1, oneTree$splitVar], decisionRule)
-    fillProbabilityForNode(oneTree$leftChild, cutPoints, cut, measure)
     
-    cut[, oneTree$splitVar] = c(decisionRule, cut[2, oneTree$splitVar])
+    leftCut = cut
+    rightCut = cut
+    
+    leftCut[, oneTree$splitVar] = c(cut[1, oneTree$splitVar], decisionRule)
+    fillProbabilityForNode(oneTree$leftChild, cutPoints, leftCut, measure)
+    rightCut[, oneTree$splitVar] = c(decisionRule, cut[2, oneTree$splitVar])
+    
     if (measure == "exponential") {
-      cut[, oneTree$splitVar] = c(decisionRule, cut[2, oneTree$splitVar])
+      rightCut[, oneTree$splitVar] = c(decisionRule, rightCut[2, oneTree$splitVar])
     }
-    fillProbabilityForNode(oneTree$rightChild, cutPoints, cut, measure)
+    fillProbabilityForNode(oneTree$rightChild, cutPoints, rightCut, measure)
 
-  } else if (is.null(oneTree$probability)) {
-
+  } else {
     oneTree$probability <- 1
-
   }
 
   return(oneTree)
@@ -160,14 +159,13 @@ singleTreeSum <- function(treeNum, model, drawNum, dim, measure)
     cut <- array(c(0, Inf), c(2, dim))
   }
 
-  treeList <- getTree(model$fit, 1, drawNum, treeNum)
+  treeList <- getTree(model$fit, 1, drawNum, 22)
 
   selectedTree <- FromListSimple(treeList)
 
   #Modify tree by the functions written above
   selectedTree <- fillProbabilityForNode(selectedTree, cutPoints, cut, measure)
   selectedTree <- terminalProbabilityStore(selectedTree)
-
 
   terminalNodeList <- Traverse(selectedTree, filterFun = isLeaf)
 
