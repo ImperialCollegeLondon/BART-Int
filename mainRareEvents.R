@@ -63,7 +63,7 @@ if (whichRare == 2) {
 }
 
 if (whichRare == 3) {
-  rareFunction <- function(xx) { return(portfolio_loss(xx)) }
+  rareFunction <- function(xx) { return(portfolio_loss(xx, gamma=5)) }
   rareFunctionName <- deparse(substitute(portfolio_loss))
 }
 
