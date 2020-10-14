@@ -64,12 +64,8 @@ portfolio_loss <- function(xx, regularizer=1e-5) {
   #
   ##########################################################################
   
-  c1 <- exp(0.2)
-  c2 <- exp(0.4)
+  c <- exp(0.2)*seq(from = 1, to = dim, by = 1)
+  d <- exp(0.2)*seq(from = 1, to = dim, by = 1)
   
-  x1 <- exp(0.2)
-  x2 <- exp(0.4)
-  
-  
-  return(c1*as.numeric(xx[,1] > x1) + c2*as.numeric(xx[,2] > x2) + regularizer)
+  return(as.numeric(trainX > d) * c + regularizer)
 }

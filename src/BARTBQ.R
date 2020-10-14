@@ -59,12 +59,12 @@ fillProbabilityForNode <- function(oneTree, cutPoints, cut, measure)
       oneTree$rightChild$probability <- 1 - oneTree$leftChild$probability      
     }
 
-    cut[, oneTree$splitVar] = c(0, decisionRule)
+    cut[, oneTree$splitVar] = c(cut[1, oneTree$splitVar], decisionRule)
     fillProbabilityForNode(oneTree$leftChild, cutPoints, cut, measure)
     
-    cut[, oneTree$splitVar] = c(decisionRule, 1)
+    cut[, oneTree$splitVar] = c(decisionRule, cut[2, oneTree$splitVar])
     if (measure == "exponential") {
-      cut[, oneTree$splitVar] = c(decisionRule, Inf)
+      cut[, oneTree$splitVar] = c(decisionRule, cut[2, oneTree$splitVar])
     }
     fillProbabilityForNode(oneTree$rightChild, cutPoints, cut, measure)
 
@@ -312,7 +312,7 @@ BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequentia
       weights <- dtnorm(candidateSet, mean=0.5, lower = 0, upper = 1)
     } else if (measure == "exponential") {
       candidateSet <- replicate(dim, rexp(candidateSetNum))
-      weights <- dexp(candidateSet[,1]) * dexp(candidateSet[,2])
+      weights <- dexp(candidateSet) 
     }
 
     # predict the values
