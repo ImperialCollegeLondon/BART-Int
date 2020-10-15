@@ -24,14 +24,14 @@ set.seed(0)
 # global parameters: dimension
 args <- commandArgs(TRUE)
 dim <- as.double(args[1])
-num_iterations <- as.double(args[2])
-whichRare <- as.double(args[3])
-whichKernel <- as.character(args[4])
+num_iterations <- 20*dim
+whichRare <- as.double(args[2])
+whichKernel <- as.character(args[3])
 # turn on/off sequential design
 # 1 denotes TRUE to sequential
 # 0 denotes FALSE to sequential
 cat("\nBegin testing:\n")
-if (as.double(args[5]) == 1 | is.na(as.double(args[5]))) {
+if (as.double(args[4]) == 1 | is.na(as.double(args[4]))) {
   sequential <- TRUE
 } else {
   sequential <- FALSE
@@ -71,13 +71,13 @@ print("Testing with: %s" %--% rareFunctionName)
 
 # prepare training dataset
 if (measure == "uniform") {
-  trainX <- replicate(dim, runif(50 * dim))
+  trainX <- replicate(dim, runif(20 * dim))
   trainY <- rareFunction(trainX)
 } else if (measure == "gaussian") {
-  trainX <- replicate(dim, rtnorm(50 * dim, mean = 0.5, lower = 0, upper = 1))
+  trainX <- replicate(dim, rtnorm(20 * dim, mean = 0.5, lower = 0, upper = 1))
   trainY <- rareFunction(trainX)
 } else if (measure == "exponential") {
-  trainX <- replicate(dim, rexp(50 * dim))
+  trainX <- replicate(dim, rexp(20 * dim))
   trainY <- rareFunction(trainX)
 }
 
@@ -113,7 +113,7 @@ for (num_cv in 1:20) {
     FUN = rareFunction, 
     trainX, 
     trainY, 
-    numSamples = num_iterations, 
+    numSamples = 10000, 
     dim, 
     measure
   )
@@ -147,7 +147,7 @@ for (num_cv in 1:20) {
   
   # Bayesian Quadrature methods: with BART, Monte Carlo Integration and Gaussian Process respectively
   print("Final Results:")
-  # print(c("Actual integral:", 1-pexp(3)))
+  print(c("Actual integral:", predictionMonteCarlo$meanValueMonteCarlo[10000]))
   print(c("BART integral:", predictionBART$meanValueBART[num_iterations]))
   print(c("MI integral:", predictionMonteCarlo$meanValueMonteCarlo[num_iterations]))
   print(c("GP integral:", predictionGPBQ$meanValueGP[num_iterations]))
