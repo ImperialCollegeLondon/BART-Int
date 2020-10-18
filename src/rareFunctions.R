@@ -76,8 +76,8 @@ portfolio_loss <- function(xx, gamma=1, regularizer=1e-5) {
   }
 
   dim <- ncol(xx)
-  a <- matrix(rep(exp(0.2 * (0:(dim - 1))), each = nrow(xx)), ncol = dim)
-  c <- matrix(rep(exp(0.2 * (0:(dim - 1))), each = nrow(xx)), ncol = dim)
+  a <- matrix(rep(0.5 * (1:dim), each = nrow(xx)), ncol = dim)
+  c <- matrix(rep(0.2 * (1:dim - 1), each = nrow(xx)), ncol = dim)
 
   return(as.numeric(rowSums(c * (xx > a))>gamma) + regularizer)
 }
