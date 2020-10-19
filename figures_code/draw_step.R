@@ -40,6 +40,7 @@ for (i in c(7)){
       
       for (num_cv in c(num_cv_plot)) {
         # Set path for estimated integral values
+        # fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "", "Gaussian", "_", toString(num_cv),  '.csv', sep='')
         fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "Uniform_", toString(num_cv),'.csv', sep='')
         filePath <- paste('results/genz', toString(whichGenz), fileName, sep='/')
         
