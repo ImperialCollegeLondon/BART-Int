@@ -3,7 +3,7 @@ Bayesian Probabilistic Numerical Integration with Tree-Based models (under revie
 
 Authors: Harrison Zhu, François-Xavier Briol, Xing Liu, Ruya Kang, Zhichao Shen, and Seth Flaxman
 
-![](bart-int.png)
+![](bart-int-full.png)
 
 ## Code directory ##
 
