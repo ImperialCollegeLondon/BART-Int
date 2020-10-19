@@ -32,20 +32,17 @@ terminalProbability <- function(currentNode)
 fillProbabilityForNode <- function(oneTree, cutPoints, cut, measure)
 
 #'Fill Non-Terminal Node Probability
-#' 
-#'@description This function calculates the prior probability of all the non-terminal tree nodes 
+#'
+#'@description This function calculates the prior probability of all the non-terminal tree nodes
 #'and fill that node with the prior probability.
-#' 
+#'
 #'@param currentNode Node; Non-terminal nodes in the tree
 #'
 #'@return The non-terminal tree nodes filled with prior probability.
 
 {
-
   if (!is.null(oneTree$leftChild)) {
-
     decisionRule <- cutPoints[[oneTree$splitVar]][oneTree$splitIndex]
-
     if (measure == "uniform") {
       oneTree$leftChild$probability <- (decisionRule - cut[1, oneTree$splitVar]) / (cut[2, oneTree$splitVar] - cut[1, oneTree$splitVar])
       oneTree$rightChild$probability <- (cut[2, oneTree$splitVar] - decisionRule) / (cut[2, oneTree$splitVar] - cut[1, oneTree$splitVar])
@@ -56,22 +53,19 @@ fillProbabilityForNode <- function(oneTree, cutPoints, cut, measure)
     } else if (measure == "exponential") {
       normalizingConst <- pexp(cut[2, oneTree$splitVar]) - pexp(cut[1, oneTree$splitVar])
       oneTree$leftChild$probability <- (pexp(decisionRule) - pexp(cut[1, oneTree$splitVar])) / normalizingConst
-      oneTree$rightChild$probability <- 1 - oneTree$leftChild$probability      
+      oneTree$rightChild$probability <- 1 - oneTree$leftChild$probability
     }
 
-    cut[, oneTree$splitVar] = c(0, decisionRule)
-    fillProbabilityForNode(oneTree$leftChild, cutPoints, cut, measure)
-    
-    cut[, oneTree$splitVar] = c(decisionRule, 1)
-    if (measure == "exponential") {
-      cut[, oneTree$splitVar] = c(decisionRule, Inf)
-    }
-    fillProbabilityForNode(oneTree$rightChild, cutPoints, cut, measure)
+    leftCut = cut
+    rightCut = cut
 
+    leftCut[, oneTree$splitVar] = c(cut[1, oneTree$splitVar], decisionRule)
+    fillProbabilityForNode(oneTree$leftChild, cutPoints, leftCut, measure)
+    rightCut[, oneTree$splitVar] = c(decisionRule, cut[2, oneTree$splitVar])
+
+    fillProbabilityForNode(oneTree$rightChild, cutPoints, rightCut, measure)
   } else if (is.null(oneTree$probability)) {
-
     oneTree$probability <- 1
-
   }
 
   return(oneTree)
@@ -167,7 +161,6 @@ singleTreeSum <- function(treeNum, model, drawNum, dim, measure)
   #Modify tree by the functions written above
   selectedTree <- fillProbabilityForNode(selectedTree, cutPoints, cut, measure)
   selectedTree <- terminalProbabilityStore(selectedTree)
-
 
   terminalNodeList <- Traverse(selectedTree, filterFun = isLeaf)
 
@@ -312,7 +305,7 @@ BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequentia
       weights <- dtnorm(candidateSet, mean=0.5, lower = 0, upper = 1)
     } else if (measure == "exponential") {
       candidateSet <- replicate(dim, rexp(candidateSetNum))
-      weights <- dexp(candidateSet[,1]) * dexp(candidateSet[,2])
+      weights <- colMeans(dexp(candidateSet))
     }
 
     # predict the values

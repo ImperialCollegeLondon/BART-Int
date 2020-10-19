@@ -44,11 +44,12 @@ cat("Integral Measure:", measure, "\n")
 
 
 # save posterior samples
-if (as.double(args[5]) == 1 & !is.na(args[7])) {
+if (as.double(args[5]) == 1 & !is.na(args[5])) {
   save_posterior <- TRUE
 } else {
   save_posterior <- FALSE
 }
+num_cv <- as.double(args[6])
 print(c(dim, num_iterations, whichRare))
 source("src/rareFunctions.R") # rare function to test
 
@@ -63,7 +64,7 @@ if (whichRare == 2) {
 }
 
 if (whichRare == 3) {
-  rareFunction <- function(xx) { return(portfolio_loss(xx, gamma=5)) }
+  rareFunction <- function(xx) { return(portfolio_loss(xx, gamma=6)) }
   rareFunctionName <- deparse(substitute(portfolio_loss))
 }
 
@@ -71,17 +72,17 @@ print("Testing with: %s" %--% rareFunctionName)
 
 # prepare training dataset
 if (measure == "uniform") {
-  trainX <- replicate(dim, runif(20 * dim))
+  trainX <- replicate(dim, runif(50 * dim))
   trainY <- rareFunction(trainX)
 } else if (measure == "gaussian") {
-  trainX <- replicate(dim, rtnorm(20 * dim, mean = 0.5, lower = 0, upper = 1))
+  trainX <- replicate(dim, rtnorm(50 * dim, mean = 0.5, lower = 0, upper = 1))
   trainY <- rareFunction(trainX)
 } else if (measure == "exponential") {
-  trainX <- replicate(dim, rexp(20 * dim))
+  trainX <- replicate(dim, rexp(50 * dim))
   trainY <- rareFunction(trainX)
 }
 
-for (num_cv in 1:20) {
+for (num_cv in num_cv:num_cv) {
   # set new seed
   set.seed(num_cv)
   cat("NUM_CV", num_cv, "\n")
@@ -122,12 +123,11 @@ for (num_cv in 1:20) {
   
   # Bayesian Quadrature with Gaussian Process
   print("Begin Gaussian Process Integration")
-  if (num_cv == 1 | num_cv == 14) {
-    library(reticulate)
-    source("src/optimise_gp.R")
-    lengthscale <- optimise_gp_r(trainX, trainY, kernel = whichKernel, epochs = 500)
-    print("...Finished training for the lengthscale")
-  }
+  library(reticulate)
+  source("src/optimise_gp.R")
+  lengthscale <- optimise_gp_r(trainX, trainY, kernel = whichKernel, epochs = 500)
+  print("...Finished training for the lengthscale")
+  
   source("src/GPBQ.R")
   t0 <- proc.time()
   # need to add in function to optimise the hyperparameters
@@ -156,7 +156,7 @@ for (num_cv in 1:20) {
   results <- data.frame(
     "epochs" = c(1:num_iterations),
     "BARTMean" = predictionBART$meanValueBART, "BARTsd" = predictionBART$standardDeviationBART,
-    "MIMean" = predictionMonteCarlo$meanValueMonteCarlo, "MIsd" = predictionMonteCarlo$standardDeviationMonteCarlo,
+    "MIMean" = predictionMonteCarlo$meanValueMonteCarlo[1:num_iterations], "MIsd" = predictionMonteCarlo$standardDeviationMonteCarlo[1:num_iterations],
     "GPMean" = predictionGPBQ$meanValueGP, "GPsd" = sqrt(predictionGPBQ$varianceGP),
     "runtimeBART" = rep(bartTime, num_iterations),
     "runtimeMI" = rep(MITime, num_iterations),
