@@ -11,6 +11,9 @@ library(doParallel)
 library(kernlab)
 library(MCMCglmm)
 
+orangered <- rgb(1, 0.271, 0, 0.3)
+dodgerblue <- rgb(0.118, 0.565, 1, 0.3)
+
 # define string formatting
 `%--%` <- function(x, y)
 # from stack exchange:
@@ -20,7 +23,6 @@ library(MCMCglmm)
 }
 
 # global parameters: dimension
-args <- commandArgs(TRUE)
 dim <- 1
 num_iterations <- 1
 whichGenz <- 7
@@ -53,7 +55,7 @@ if (whichGenz == 7) { genz <- function(xx) { return(step(xx, jumps = jumps)) }; 
 if (whichGenz == 8) { genz <- mix; genzFunctionName <- deparse(substitute(mix)) }
 
 print("Testing with: %s" %--% genzFunctionName)
-
+set.seed(2)
 # prepare training dataset
 if (measure == "uniform") {
   trainX <- replicate(dim, runif(20))
@@ -79,8 +81,8 @@ ymin <- min(posterior_model$trainData[, (dim + 1)]);
 ymax <- max(posterior_model$trainData[, (dim + 1)])
 integrals <- (integrals + 0.5) * (ymax - ymin) + ymin
 
-plot(x_plot, y_pred_mean)
-hist(integrals)
+# plot(x_plot, y_pred_mean)
+# hist(integrals)
 # 
 # if (!sequential){
 #   figName <- "Figures/%s/drawBART%s%sDimNoSequential.pdf" %--% c(whichGenz, genzFunctionName, dim)
@@ -136,17 +138,33 @@ gp_post_cov <- k_xstar_xstar - k_xstar_x %*% K_inv %*% t(k_xstar_x)
 gp_post_sd <- sqrt(diag(gp_post_cov))
 
 #plot of integrals
+xx <- seq(0, 1, 0.001)
 GPdensity <- dnorm(
-  seq(0, 1, 0.01),
+  xx,
   mean = predictionGPBQ$meanValueGP[1],
   sd = sqrt(predictionGPBQ$varianceGP[1])
 )
-KDE_BART <- density(integrals)
 
-pdf("figures_code/posterior_step.pdf", width=9, height=3)
+KDE_BART <- density(integrals)
+kde_fun <- function(t){
+  xs <- integrals
+  h <- KDE_BART$bw
+  kernelValues <- rep(0,length(xs))
+  for(i in 1:length(xs)){
+      transformed = (t - xs[i]) / h
+      kernelValues[i] <- dnorm(transformed, mean = 0, sd = 1) / h
+  }
+  return(sum(kernelValues) / length(xs))
+}
+BARTdensity <- sapply(xx, kde_fun)
+
+
+pdf("Figures/posterior_step.pdf", width=9, height=3)
 par(mfrow = c(1,3), pty = "s")
+
+bartlty = 1
 plot(
-  seq(0, 1, 0.01), 
+  xx, 
   GPdensity, 
   ty="l", 
   col = "dodgerblue", 
@@ -156,26 +174,40 @@ plot(
   ylab = "Posterior density",
   cex.lab = 1.7,
   cex.axis = 1.7,
-  lwd=3
+  lwd=2.5
 )
-points(KDE_BART, ty="l", col = "orangered", lwd=3)
-abline(v=0.5, lwd=3)
-legend("topleft", legend=c("BART", "GP", expression(Pi*"[f]")),
-       col=c("orangered", "dodgerblue", "black"), lty = c(1,1,1), cex=2.4, bty="n")
+polygon(c(xx, max(xx), min(xx)), c(GPdensity, 0, 0), border=NA, col=dodgerblue)
+points(xx, BARTdensity, ty="l", col = "orangered", lwd=2.5, lty=bartlty)
+polygon(c(xx, max(xx), min(xx)), c(BARTdensity, 0, 0), border=NA, col=orangered)
+abline(v=0.5, lwd=2.5, lty="dashed")
+
+# legend(0.25, 82,
+#       # "topleft", 
+#        legend=c("BART", "GP", expression(Pi*"[f]")), 
+#        col=c("orangered", "dodgerblue", "black"), lty = c(bartlty,1,1), cex=2.4, bty="n", 
+#        horiz=TRUE, xpd=TRUE, 
+#       #  inset=c(0.5, 0.5)
+#       )
+# legend(0.3, 82,
+#        legend=c(expression(Pi*"[f]")), 
+#        col=c("black"), lty = c(1), cex=2.4, bty="n", 
+#        horiz=TRUE, xpd=TRUE, 
+#       )
 
 plot(x_plot, y_pred_mean, col = "orangered", ty="l", lwd=3,ylim=c(-0.2, 1.5),
      ylab = expression(f(x)), xlab = "x",      cex.lab = 1.7,
      cex.axis = 1.7)
-# points(trainX, trainY, col = "black")
 points(c(0,0.5,0.5, 1), c(0,0,1,1), ty="l", lwd=1, col="black")
 
 for (i in seq(1, 500, 10)) {
-  points(rep(x_plot[i], 1000), y_pred[,i], col="orangered",bg='orangered',
-         cex=0.2, alpha=0.01, pch=16)
+  points(rep(x_plot[i], 1000), y_pred[,i], col=orangered, bg=orangered,
+         cex=0.2, alpha=0.001, pch=16)
 }
-# legend("topright", legend=c("BART-Int", "GP-BQ"),
-#        col=c("orangered", "dodgerblue"), cex=1, lty = c(1,1,1,1))
-
+# legend(-0.15, 2.1,
+#        legend=c("BART"), 
+#        col=c("orangered"), lty = c(bartlty), cex=2.4, bty="n", 
+#        horiz=TRUE, xpd=TRUE, 
+#       )
 
 a <-density(integrals)$y 
 # plot(trainX, trainY, ylim=c(-0.2, 1.3))
@@ -200,8 +232,21 @@ polygon(c(x_plot, rev(x_plot)),
           gp_post_mean + 1.96*gp_post_sd, 
           rev(gp_post_mean - 1.96*gp_post_sd)
         ), 
-        col = adjustcolor("dodgerblue", alpha.f = 0.10), 
+        col = adjustcolor("dodgerblue", alpha.f = 0.40), 
         border = "dodgerblue", lty = c("dashed", "solid"))
-# points(trainX, trainY, col = "black")
+# legend(-0.15, 2.1,
+#        legend=c("GP"), 
+#        col=c("dodgerblue"), lty = c(1), cex=2.4, bty="n", 
+#        horiz=TRUE, xpd=TRUE, 
+#       )
+
+# add legend
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n", cex.lab=0.01)
+legend(-1.8, 1.1,
+       legend=c("BART", "GP", expression(Pi*"[f]")), 
+       col=c("orangered", "dodgerblue", "black"), lty = c(bartlty, 1, 2), cex=2.4, bty="n", lwd=c(1.5, 1.5, 2),
+       horiz=TRUE, xpd=TRUE, 
+      )
 
 dev.off()

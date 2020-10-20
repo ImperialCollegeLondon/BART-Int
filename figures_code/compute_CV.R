@@ -58,8 +58,8 @@ for (i in c(1,2,3,4,5,6,7)){
     
     for (num_cv in 1:20) {
       # Set path for estimated integral values
-      # fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "", "Gaussian", "_", toString(num_cv),  '.csv', sep='')
-      fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "Uniform", "_", toString(num_cv),  '.csv', sep='')
+      fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "", "Gaussian", "_", toString(num_cv),  '.csv', sep='')
+      # fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "Uniform", "_", toString(num_cv),  '.csv', sep='')
       filePath <- paste('results/genz', toString(whichGenz), fileName, sep='/')
       
       # Retrieve estimated integral values
