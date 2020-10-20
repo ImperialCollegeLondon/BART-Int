@@ -30,5 +30,6 @@ for (dim in dims) {
   
   l = l+1
 }
+print(results)
 write.csv(results, "results/genz/high_dimensionality.csv")
 

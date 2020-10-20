@@ -29,8 +29,8 @@ RMSE <- function(x, y){
 }
 
 
-for (i in c(7)){
-  for (j in c(1)){
+for (i in c(1,2,3,4,5,6,7)){
+  for (j in c(1,5)){
     meanabsMape <- 0
     resultsAllEntry <- 0
     

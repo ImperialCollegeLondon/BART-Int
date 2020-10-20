@@ -57,7 +57,7 @@ getTreeNumLeaf <- function(sampler, chainNum, sampleNum, treeNum)
 }
 
 # pdf("Figures/2.pdf" %--% c(genzFunctionName), width=11, height=2.8)
-pdf("Figures/2.pdf" %--% c(genzFunctionName), width=5, height=5)
+pdf("Figures/3.pdf" %--% c(genzFunctionName), width=5, height=5)
 # par(pty="s", mfrow=c(1, 3), mai = c(1, 0.4, 0.4, 0.4), cex=1.3)
 par(pty="s", cex=1.3)
 for (whichGenz in c(7)) {
