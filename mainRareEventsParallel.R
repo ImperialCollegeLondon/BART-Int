@@ -85,7 +85,7 @@ if (measure == "uniform") {
 for (num_cv in num_cv:num_cv) {
   # set new seed
   set.seed(num_cv)
-  cat("NUM_CV", num_cv, "\n")
+  cat("NUM_CV", num_cv, "\n", "rare", whichRare)
   # BART-Int method
   # set number of new query points using sequential design
   source("src/BARTBQ.R")
