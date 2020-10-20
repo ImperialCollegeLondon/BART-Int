@@ -16,7 +16,7 @@
 }
 ylims <- as.double(commandArgs(TRUE))
 mape_error <- read.csv("results/genz/mapeValues.csv")
-num_cv_plot=18
+num_cv_plot=3
 for (i in c(7)){
   for (j in c(1)){
     for (sequential in c("")){
