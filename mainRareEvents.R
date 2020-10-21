@@ -24,18 +24,14 @@ set.seed(0)
 # global parameters: dimension
 args <- commandArgs(TRUE)
 dim <- as.double(args[1])
-num_iterations <- 20*dim
+num_iterations <- 1
 whichRare <- as.double(args[2])
 whichKernel <- as.character(args[3])
 # turn on/off sequential design
 # 1 denotes TRUE to sequential
 # 0 denotes FALSE to sequential
 cat("\nBegin testing:\n")
-if (as.double(args[4]) == 1 | is.na(as.double(args[4]))) {
-  sequential <- TRUE
-} else {
-  sequential <- FALSE
-}
+sequential <- FALSE
 cat("Sequantial design set to", sequential, "\n")
 # prior measure over the inputs
 # uniform by default
@@ -63,7 +59,7 @@ if (whichRare == 2) {
 }
 
 if (whichRare == 3) {
-  rareFunction <- function(xx) { return(portfolio_loss(xx, gamma=5)) }
+  rareFunction <- function(xx) { return(portfolio_loss(xx, gamma=2)) }
   rareFunctionName <- deparse(substitute(portfolio_loss))
 }
 
@@ -71,15 +67,18 @@ print("Testing with: %s" %--% rareFunctionName)
 
 # prepare training dataset
 if (measure == "uniform") {
-  trainX <- replicate(dim, runif(20 * dim))
+  trainX <- replicate(dim, runif(500 * dim))
   trainY <- rareFunction(trainX)
 } else if (measure == "gaussian") {
-  trainX <- replicate(dim, rtnorm(20 * dim, mean = 0.5, lower = 0, upper = 1))
+  trainX <- replicate(dim, rtnorm(500 * dim, mean = 0.5, lower = 0, upper = 1))
   trainY <- rareFunction(trainX)
 } else if (measure == "exponential") {
-  trainX <- replicate(dim, rexp(20 * dim))
+  trainX <- replicate(dim, rexp(500 * dim))
   trainY <- rareFunction(trainX)
 }
+trainX <- replicate(50,rexp(1000000))
+trainY <- rareFunction(trainX)
+mean(trainY)
 
 for (num_cv in 1:20) {
   # set new seed
@@ -113,7 +112,7 @@ for (num_cv in 1:20) {
     FUN = rareFunction, 
     trainX, 
     trainY, 
-    numSamples = 10000, 
+    numSamples = num_iterations, 
     dim, 
     measure
   )
@@ -122,12 +121,9 @@ for (num_cv in 1:20) {
   
   # Bayesian Quadrature with Gaussian Process
   print("Begin Gaussian Process Integration")
-  if (num_cv == 1 | num_cv == 14) {
-    library(reticulate)
-    source("src/optimise_gp.R")
-    lengthscale <- optimise_gp_r(trainX, trainY, kernel = whichKernel, epochs = 500)
-    print("...Finished training for the lengthscale")
-  }
+  source("src/optimise_gp.R")
+  lengthscale <- optimise_gp_r(trainX, trainY, kernel = whichKernel, epochs = 500)
+  print("...Finished training for the lengthscale")
   source("src/GPBQ.R")
   t0 <- proc.time()
   # need to add in function to optimise the hyperparameters
@@ -147,12 +143,11 @@ for (num_cv in 1:20) {
   
   # Bayesian Quadrature methods: with BART, Monte Carlo Integration and Gaussian Process respectively
   print("Final Results:")
-  print(c("Actual integral:", predictionMonteCarlo$meanValueMonteCarlo[10000]))
   print(c("BART integral:", predictionBART$meanValueBART[num_iterations]))
   print(c("MI integral:", predictionMonteCarlo$meanValueMonteCarlo[num_iterations]))
   print(c("GP integral:", predictionGPBQ$meanValueGP[num_iterations]))
   
-  print("Writing full results to results/rares/%s" %--% c(whichRare))
+    print("Writing full results to results/rares/%s" %--% c(whichRare))
   results <- data.frame(
     "epochs" = c(1:num_iterations),
     "BARTMean" = predictionBART$meanValueBART, "BARTsd" = predictionBART$standardDeviationBART,

@@ -44,7 +44,7 @@ indicator_square_greater <- function(xx, threshold=3, regularizer=1e-5)
   return(as.numeric(xx^2 > threshold) + regularizer)
 }
 
-portfolio_loss <- function(xx, gamma=1, regularizer=1e-5) {
+portfolio_loss <- function(xx, gamma=1, regularizer=1e-6) {
   ##########################################################################
   #
   # PORTFOLIO LOSS FUNCTION
@@ -77,7 +77,7 @@ portfolio_loss <- function(xx, gamma=1, regularizer=1e-5) {
 
   dim <- ncol(xx)
   a <- matrix(rep(0.5 * (1:dim), each = nrow(xx)), ncol = dim)
-  c <- matrix(rep(0.2 * (1:dim - 1), each = nrow(xx)), ncol = dim)
+  c <- matrix(rep(0.2 * (1:dim), each = nrow(xx)), ncol = dim)
 
   return(as.numeric(rowSums(c * (xx > a))>gamma) + regularizer)
 }

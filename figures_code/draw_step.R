@@ -16,7 +16,7 @@
 }
 ylims <- as.double(commandArgs(TRUE))
 mape_error <- read.csv("results/genz/mapeValues.csv")
-num_cv_plot=18
+num_cv_plot=3
 for (i in c(7)){
   for (j in c(1)){
     for (sequential in c("")){
@@ -59,31 +59,31 @@ for (i in c(7)){
         }
       }
     }
-    plot_points <- seq(0, 50, 5)
+    plot_points <- seq(0, 20, 5)
     pdf(paste("Figures/genz", "/combined_", toString(whichGenz), ".pdf", sep = ""), width = 5, height = 5)
     par(pty = "s")
-    plot(integrals$epochs+50, 
+    plot(integrals$epochs+20, 
          integrals$MIMean, 
          ty="l", 
          ylab = "Integral",
          xlab = expression("n'"+n[seq]),
          col = "chartreuse4",
-         ylim = c(0.45, 0.59),
+         ylim = c(0.35, 0.65),
          cex.lab = 1.7,
          cex.axis = 1.7
     )
-    points(integrals$epochs[plot_points]+50, integrals$MIMean[plot_points], col = "chartreuse4", bg='chartreuse4', pch=21, lwd=3)
-    points(integrals$epochs+50, integrals$GPMean, ty="l", col = "dodgerblue", lwd=3)
-    points(integrals$epochs[plot_points]+50, integrals$GPMean[plot_points], col = "dodgerblue", bg='dodgerblue', pch=21, lwd=3)
-    polygon(c(integrals$epochs+50, rev(integrals$epochs+50)), 
+    points(integrals$epochs[plot_points]+20, integrals$MIMean[plot_points], col = "chartreuse4", bg='chartreuse4', pch=21, lwd=3)
+    points(integrals$epochs+20, integrals$GPMean, ty="l", col = "dodgerblue", lwd=3)
+    points(integrals$epochs[plot_points]+20, integrals$GPMean[plot_points], col = "dodgerblue", bg='dodgerblue', pch=21, lwd=3)
+    polygon(c(integrals$epochs+20, rev(integrals$epochs+20)), 
             c(
               integrals$GPMean + 2*integrals$GPsd, 
               rev(integrals$GPMean - 2*integrals$GPsd)
             ), 
             col = adjustcolor("dodgerblue", alpha.f = 0.10), 
             border = "dodgerblue", lty = c("dashed", "solid"))
-    points(integrals$epochs+50, integrals$BARTMean, ty="l", col = "orangered", lwd=3)
-    points(integrals$epochs[plot_points]+50, integrals$BARTMean[plot_points], col = "orangered",bg='orangered', pch=21, lwd=3)
+    points(integrals$epochs+20, integrals$BARTMean, ty="l", col = "orangered", lwd=3)
+    points(integrals$epochs[plot_points]+20, integrals$BARTMean[plot_points], col = "orangered",bg='orangered', pch=21, lwd=3)
     # polygon(c(integrals$epochs+50, rev(integrals$epochs+50)),
     #         c(
     #           integrals$BARTMean + 2*integrals$BARTsd,
@@ -92,15 +92,15 @@ for (i in c(7)){
     #         col = adjustcolor("orangered", alpha.f = 0.10),
     #         border = "orangered", lty = c("dashed", "solid"))
     for (n_seq in 1:20) {
-      bart_posterior <- load("results/genz/posterior_BART_Dim1_step_%s_%s.RData" %--% c(num_cv_plot,n_seq))
+      bart_posterior <- load("results/genz/draw_step/posterior_BART_Dim1_step_%s_%s.RData" %--% c(num_cv_plot,n_seq))
       if (n_seq == 1) {
         num_posterior_samples <- length(posterior_samples$posterior_samples)
-        points(rep(n_seq+50, num_posterior_samples), 
+        points(rep(n_seq+20, num_posterior_samples), 
              posterior_samples$posterior_samples,
              col = "orangered",bg='orangered',
              cex=0.1)
       } else {
-        points(rep(n_seq+50, num_posterior_samples), posterior_samples$posterior_samples, 
+        points(rep(n_seq+20, num_posterior_samples), posterior_samples$posterior_samples, 
                col = "orangered", bg='orangered', cex=0.1)
       }
     }
