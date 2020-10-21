@@ -11,7 +11,6 @@ library(doParallel)
 library(kernlab)
 library(msm)
 library(MCMCglmm)
-set.seed(0)
 
 # define string formatting
 `%--%` <- function(x, y)
@@ -60,7 +59,7 @@ if (whichRare == 2) {
 }
 
 if (whichRare == 3) {
-  rareFunction <- function(xx) { return(portfolio_loss(xx, gamma=5)) }
+  rareFunction <- function(xx) { return(portfolio_loss(xx, gamma=2)) }
   rareFunctionName <- deparse(substitute(portfolio_loss))
 }
 
@@ -110,7 +109,7 @@ for (num_cv in num_cv:num_cv) {
     FUN = rareFunction, 
     trainX, 
     trainY, 
-    numSamples = 10000, 
+    numSamples = num_iterations, 
     dim, 
     measure
   )
@@ -143,7 +142,6 @@ for (num_cv in num_cv:num_cv) {
   
   # Bayesian Quadrature methods: with BART, Monte Carlo Integration and Gaussian Process respectively
   print("Final Results:")
-  print(c("Actual integral:", predictionMonteCarlo$meanValueMonteCarlo[10000]))
   print(c("BART integral:", predictionBART$meanValueBART[num_iterations]))
   print(c("MI integral:", predictionMonteCarlo$meanValueMonteCarlo[num_iterations]))
   print(c("GP integral:", predictionGPBQ$meanValueGP[num_iterations]))
