@@ -359,7 +359,8 @@ BART_posterior <- function(dim, trainX, trainY, numNewTraining, FUN, sequential,
     # first build BART and scale mean and standard deviation
     sink("/dev/null")
     # sigest = 0.0001 ensures that there is almost no noise
-    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 200, k = 2, sigest=0.1)
+    # model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 200, k = 2, sigest=0.1)
+    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 50, k = 2, sigest=0.1)
     sink()
     # obtain posterior samples
     integrals <- sampleIntegrals(model, dim, measure)

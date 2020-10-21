@@ -29,8 +29,8 @@ RMSE <- function(x, y){
 }
 
 
-for (i in c(7)){
-  for (j in c(1)){
+for (i in c(1,2,3,4,5,6,7)){
+  for (j in c(1,5)){
     meanabsMape <- 0
     resultsAllEntry <- 0
     
@@ -58,8 +58,8 @@ for (i in c(7)){
     
     for (num_cv in 1:20) {
       # Set path for estimated integral values
-      # fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "", "Gaussian", "_", toString(num_cv),  '.csv', sep='')
-      fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "Uniform", "_", toString(num_cv),  '.csv', sep='')
+      fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "", "Gaussian", "_", toString(num_cv),  '.csv', sep='')
+      # fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "Uniform", "_", toString(num_cv),  '.csv', sep='')
       filePath <- paste('results/genz', toString(whichGenz), fileName, sep='/')
       
       # Retrieve estimated integral values
