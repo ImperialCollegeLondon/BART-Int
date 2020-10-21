@@ -56,7 +56,11 @@ getTreeNumLeaf <- function(sampler, chainNum, sampleNum, treeNum)
         sep = "", collapse = " ")
 }
 
+<<<<<<< HEAD
+# pdf("Figures/1.pdf" %--% c(genzFunctionName), width=11, height=2.8)
+=======
 # pdf("Figures/2.pdf" %--% c(genzFunctionName), width=11, height=2.8)
+>>>>>>> 927fb4327b5ff39d71227877b314d6dbaa8da448
 pdf("Figures/3.pdf" %--% c(genzFunctionName), width=5, height=5)
 # par(pty="s", mfrow=c(1, 3), mai = c(1, 0.4, 0.4, 0.4), cex=1.3)
 par(pty="s", cex=1.3)
