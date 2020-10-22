@@ -1,9 +1,9 @@
 # Bayesian Probabilistic Numerical Integration with Tree-Based Models
-Bayesian Probabilistic Numerical Integration with Tree-Based models (under review)
+Bayesian Probabilistic Numerical Integration with Tree-Based models (to appear in Advances in Neural Information Systems 2020)
 
 Authors: Harrison Zhu, François-Xavier Briol, Xing Liu, Ruya Kang, Zhichao Shen, and Seth Flaxman
 
-![](bart-int.png)
+![](bart-int-full.png)
 
 ## Code directory ##
 
