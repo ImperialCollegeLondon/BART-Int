@@ -63,7 +63,7 @@ if (measure == "uniform") {
   trainX <- replicate(dim, rtnorm(20, lower = 0, upper = 1))
 }
 trainY <- genz(trainX)
-source("src/BARTBQ.R")
+source("src/BARTInt.R")
 t0 <- proc.time()
 posterior_model <- BART_posterior(dim, trainX, trainY, num_iterations, FUN = genz, sequential, measure)
 t1 <- proc.time()
