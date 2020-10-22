@@ -51,7 +51,7 @@ The `causal-inference` branch contains code relating to "Some Links Between Caus
     	├───├genz: Genz functions and its integrals
             ├───├analyticalIntegrals.R
             ├───├genz.R
-        ├───├BARTBQ.R: Implementation of BART-Int
+        ├───├BARTInt.R: Implementation of BART-Int
         ├───├GPBQ.R: Implementation of Bayesian Quadrature with Gaussian processes (GP-BQ)
         ├───├monteCarloIntegration.R: Main class of Monte Carlo integration
         ├───├optimise_gp.R: Source file used to optimise the lengthscale using Pytorch with reticulate
