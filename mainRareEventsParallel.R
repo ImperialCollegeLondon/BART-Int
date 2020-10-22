@@ -11,7 +11,6 @@ library(doParallel)
 library(kernlab)
 library(msm)
 library(MCMCglmm)
-set.seed(0)
 
 # define string formatting
 `%--%` <- function(x, y)
@@ -24,18 +23,14 @@ set.seed(0)
 # global parameters: dimension
 args <- commandArgs(TRUE)
 dim <- as.double(args[1])
-num_iterations <- 20*dim
+num_iterations <- 1
 whichRare <- as.double(args[2])
 whichKernel <- as.character(args[3])
 # turn on/off sequential design
 # 1 denotes TRUE to sequential
 # 0 denotes FALSE to sequential
 cat("\nBegin testing:\n")
-if (as.double(args[4]) == 1 | is.na(as.double(args[4]))) {
-  sequential <- TRUE
-} else {
-  sequential <- FALSE
-}
+sequential <- FALSE
 cat("Sequantial design set to", sequential, "\n")
 # prior measure over the inputs
 # uniform by default
@@ -64,7 +59,7 @@ if (whichRare == 2) {
 }
 
 if (whichRare == 3) {
-  rareFunction <- function(xx) { return(portfolio_loss(xx, gamma=6)) }
+  rareFunction <- function(xx) { return(portfolio_loss(xx, gamma=2)) }
   rareFunctionName <- deparse(substitute(portfolio_loss))
 }
 
@@ -72,13 +67,13 @@ print("Testing with: %s" %--% rareFunctionName)
 
 # prepare training dataset
 if (measure == "uniform") {
-  trainX <- replicate(dim, runif(50 * dim))
+  trainX <- replicate(dim, runif(500 * dim))
   trainY <- rareFunction(trainX)
 } else if (measure == "gaussian") {
-  trainX <- replicate(dim, rtnorm(50 * dim, mean = 0.5, lower = 0, upper = 1))
+  trainX <- replicate(dim, rtnorm(500 * dim, mean = 0.5, lower = 0, upper = 1))
   trainY <- rareFunction(trainX)
 } else if (measure == "exponential") {
-  trainX <- replicate(dim, rexp(50 * dim))
+  trainX <- replicate(dim, rexp(500 * dim))
   trainY <- rareFunction(trainX)
 }
 
@@ -114,7 +109,7 @@ for (num_cv in num_cv:num_cv) {
     FUN = rareFunction, 
     trainX, 
     trainY, 
-    numSamples = 10000, 
+    numSamples = num_iterations, 
     dim, 
     measure
   )
@@ -147,7 +142,6 @@ for (num_cv in num_cv:num_cv) {
   
   # Bayesian Quadrature methods: with BART, Monte Carlo Integration and Gaussian Process respectively
   print("Final Results:")
-  print(c("Actual integral:", predictionMonteCarlo$meanValueMonteCarlo[10000]))
   print(c("BART integral:", predictionBART$meanValueBART[num_iterations]))
   print(c("MI integral:", predictionMonteCarlo$meanValueMonteCarlo[num_iterations]))
   print(c("GP integral:", predictionGPBQ$meanValueGP[num_iterations]))
