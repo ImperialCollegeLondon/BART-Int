@@ -11,7 +11,7 @@ library(doParallel)
 library(kernlab)
 library(msm)
 library(MCMCglmm)
-
+  
 # define string formatting
 `%--%` <- function(x, y) 
   # from stack exchange:
@@ -89,11 +89,11 @@ for (num_cv in 1:20) {
   }
   # set new seed
   cat("NUM_CV", num_cv, "\n")
-  # Bayesian Quadrature method
+  # BART-Int method
   # set number of new query points using sequential design
-  source("src/BARTBQ.R")
+  source("src/BARTInt.R")
   t0 <- proc.time()
-  predictionBART <- mainBARTBQ(dim, num_iterations, FUN = genz, trainX, trainY, sequential, measure)
+  predictionBART <- mainBARTInt(dim, num_iterations, FUN = genz, trainX, trainY, sequential, measure)
   t1 <- proc.time()
   bartTime <- (t1 - t0)[[1]]
   

@@ -101,11 +101,11 @@ for (num_cv in num_cv_start:num_cv_end) {
   # set new seed
   set.seed(num_cv)
   cat("NUM_CV", num_cv, "\n")
-  # Bayesian Quadrature method
+  # BART-Int method
   # set number of new query points using sequential design
-  source("src/BARTBQ.R")
+  source("src/BARTInt.R")
   t0 <- proc.time()
-  predictionBART <- mainBARTBQ(dim, num_iterations, FUN = genz, trainX, trainY, sequential, measure, save_posterior=save_posterior, save_posterior_filename=paste(genzFunctionName, num_cv, sep="_"))
+  predictionBART <- mainBARTInt(dim, num_iterations, FUN = genz, trainX, trainY, sequential, measure, save_posterior=save_posterior, save_posterior_filename=paste(genzFunctionName, num_cv, sep="_"))
   t1 <- proc.time()
   bartTime <- (t1 - t0)[[1]]
   
@@ -126,7 +126,7 @@ for (num_cv in num_cv_start:num_cv_end) {
   lengthscale <- optimise_gp_r(trainX, trainY, kernel = whichKernel, epochs=500)
   print("...Finished training for the lengthscale")
 
-  source("src/GPBQ.R")
+  source("src/BARTInt.R")
   t0 <- proc.time()
   # need to add in function to optimise the hyperparameters
   predictionGPBQ <- computeGPBQ_matern(

@@ -86,9 +86,9 @@ for (num_cv in 1:20) {
   cat("NUM_CV", num_cv, "\n")
   # BART-Int method
   # set number of new query points using sequential design
-  source("src/BARTBQ.R")
+  source("src/BARTInt.R")
   t0 <- proc.time()
-  predictionBART <- mainBARTBQ(
+  predictionBART <- mainBARTInt(
     dim, 
     num_iterations,
     FUN = rareFunction,
