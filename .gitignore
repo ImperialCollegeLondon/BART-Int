@@ -62,3 +62,9 @@ env/
 *.csv
 *.zip
 
+# cluster files
+*.sub
+*.sh
+*.e*
+*.o*
+integrationMainParallel.R 

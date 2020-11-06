@@ -16,7 +16,7 @@ for (dim in dims) {
   gp = c()
   mi = c()
   for (num_cv in 1:20) {
-    df <- read.csv("results/genz/9/additive_gaussianDim%sUniform_%s.csv" %--% c(dim, num_cv))
+    df <- read.csv("results/genz/9/additive_gaussianDim%sNoSequentialUniform_%s.csv" %--% c(dim, num_cv))
     bart = c(bart, df$BARTMean)
     gp = c(gp, df$GPMean)
     mi = c(mi, df$MIMean)
@@ -30,5 +30,6 @@ for (dim in dims) {
   
   l = l+1
 }
+print(results)
 write.csv(results, "results/genz/high_dimensionality.csv")
 

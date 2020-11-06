@@ -29,8 +29,8 @@ RMSE <- function(x, y){
 }
 
 
-for (i in c(1:7)){
-  for (j in c(1)){
+for (i in c(1,2,3,4,5,6,7)){
+  for (j in c(1,5)){
     meanabsMape <- 0
     resultsAllEntry <- 0
     
@@ -47,9 +47,6 @@ for (i in c(1:7)){
     # } else if (whichGenz == 3 & dim == 3) {
     #   next
     # }
-    if (whichGenz == 3) { 
-      next
-    }
     # Find Genz function
     if (whichGenz == 1) { genzFunctionName <-  "cont" }
     if (whichGenz == 2) { genzFunctionName <-  "copeak" }
@@ -61,8 +58,8 @@ for (i in c(1:7)){
     
     for (num_cv in 1:20) {
       # Set path for estimated integral values
-      # fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "", "Gaussian", "_", toString(num_cv),  '.csv', sep='')
-      fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "Uniform", "_", toString(num_cv),  '.csv', sep='')
+      fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "", "Gaussian", "_", toString(num_cv),  '.csv', sep='')
+      # fileName <- paste(toString(genzFunctionName), 'Dim', toString(dim), "Uniform", "_", toString(num_cv),  '.csv', sep='')
       filePath <- paste('results/genz', toString(whichGenz), fileName, sep='/')
       
       # Retrieve estimated integral values
@@ -110,6 +107,8 @@ for (i in c(1:7)){
   cat(genzFunctionName, "done", '\n')
 }
 
+print(bestMethod)
+print(mapeValues)
 write.csv(bestMethod, file = "results/genz/bestMethods.csv")
 write.csv(resultsAll, file = "results/genz/allEstimates.csv")
 write.csv(mapeValues, file = "results/genz/mapeValues.csv")

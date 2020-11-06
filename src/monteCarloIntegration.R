@@ -28,6 +28,8 @@ monteCarloIntegrationUniform <- function(FUN, trainX, trainY, numSamples, dim, m
 			candidateX <- matrix(replicate(dim, runif(1, 0, 1)), ncol=dim)
 		} else if (measure == "gaussian") {
 			candidateX <- matrix(replicate(dim, rtnorm(1, mean=0.5, lower=0, upper=1)), ncol=dim)
+		} else if (measure == "exponential") {
+		  candidateX <- matrix(replicate(dim, rexp(1)), ncol=dim)
 		}
 		candidateY <- FUN(candidateX)
 		trainData <- rbind(trainData, c(candidateX, candidateY))

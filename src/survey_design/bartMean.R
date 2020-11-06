@@ -13,7 +13,7 @@ library(matrixStats)
   do.call(sprintf, c(list(x), y))
 }
 
-computeBART <- function(trainX, trainY, candidateX, candidateY, num_iterations, save_posterior=FALSE, save_posterior_dir="results/survey_design", num_cv="default") 
+computeBART <- function(nonOneHotTrainX, trainX, trainY, nonOneHotCandidateX, candidateX, candidateY, num_iterations, save_posterior=FALSE, save_posterior_dir="results/survey_design", num_cv="default") 
 {
   dim <- ncol(trainX)
   print( c("Adding number of new training data:", num_iterations) )
@@ -24,11 +24,10 @@ computeBART <- function(trainX, trainY, candidateX, candidateY, num_iterations, 
   eduStandardDeviation <- matrix(0, 2*num_iterations, nrow=2, ncol=num_iterations)
   trainData <- cbind(trainX, trainY)
   fullData <- rbind(trainX, candidateX)
+  emp_density_func <- build_density(rbind(nonOneHotTrainX, nonOneHotCandidateX))
+  weights <- emp_density_func(nonOneHotCandidateX)
   
   colnames(trainData)[dim+1] <- "response"
-
-  # index of segmentation
-  index <- matrix(c(1,16,17,24), nrow = 2, ncol = 2)
 
   # generate extra training data using the scheme (see pdf)
   for (i in 1:num_iterations) {
@@ -48,7 +47,7 @@ computeBART <- function(trainX, trainY, candidateX, candidateY, num_iterations, 
     fValues <- predict(model, candidateX)
 
     # select the best candidate, find its response
-    var <- colVars(fValues)
+    var <- colVars(fValues) * weights
     index <- sample(which(var==max(var)), 1)
     response <- candidateY[index]
 
@@ -84,6 +83,7 @@ computeBART <- function(trainX, trainY, candidateX, candidateY, num_iterations, 
 
     # remove newly added value from candidate set
     candidateX <- candidateX[-index,]
+    weights <- weights[-index]
     candidateY <- candidateY[-index]
 
   }

@@ -73,18 +73,13 @@ computeGPBQ_matern <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale
   } else if (measure == "gaussian") {
     int.points.1 <- replicate(dim, rtnorm(10000, mean = 0.5, lower=0, upper=1))
     int.points.2 <- replicate(dim, rtnorm(10000, mean = 0.5, lower=0, upper=1))
-  } else if (measure == "exponential") {
-    int.points.1 <- replicate(dim, rexp(10000))
-    int.points.2 <- replicate(dim, rexp(10000))
   }
   cov <- kernel(int.points.1, int.points.2)
   var.firstterm <- mean(cov[upper.tri(cov)])
   if (measure == "uniform"){
-    int.points.1 <- replicate(dim, runif(1000000))
+    int.points.1 <- replicate(dim, runif(100000))
   } else if (measure == "gaussian") {
-    int.points.1 <- replicate(dim, rtnorm(1000000, mean = 0.5, lower=0, upper=1))
-  } else if (measure == "exponential") {
-    int.points.1 <- replicate(dim, rexp(10000))
+    int.points.1 <- replicate(dim, rtnorm(100000, mean = 0.5, lower=0, upper=1))
   }
   cov <- kernel(int.points.1, X)
   z <- colMeans(cov) 
@@ -108,9 +103,6 @@ computeGPBQ_matern <- function(X, Y, dim, epochs, kernel="rbf", FUN, lengthscale
     } else if (measure == "gaussian") {
       candidateSet <- replicate(dim, rtnorm(candidateSetNum, mean = 0.5, lower = 0, upper = 1))
       weights <- dtnorm(candidateSet, mean=0.5, lower = 0, upper = 1)
-    } else if (measure == "exponential") {
-      candidateSet <- replicate(dim, rexp(candidateSetNum))
-      weights <- colMeans(dexp(candidateSet))
     }
     K_prime <- diag(N+p-1)
     K_prime[1:(N+p-2), 1:(N+p-2)] <- K

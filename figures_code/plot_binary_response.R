@@ -103,8 +103,8 @@ for (num_cv in c(1:20)) {
   points(results$epochs+num_design, results$GPMean, ty="l", col = "dodgerblue", lwd=3)
   polygon(c(results$epochs+num_design, rev(results$epochs+num_design)), 
           c(
-            results$GPMean + 1.96*results$GPsd, 
-            rev(results$GPMean - 1.96*results$GPsd)
+            results$GPMean + 1.96*sqrt(results$GPsd), 
+            rev(results$GPMean - 1.96*sqrt(results$GPsd))
           ), 
           col = adjustcolor("dodgerblue", alpha.f = 0.10), 
           border = "dodgerblue", lty = c("dashed", "solid"))
