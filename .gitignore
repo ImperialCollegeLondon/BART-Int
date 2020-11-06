@@ -56,6 +56,7 @@ env/
 
 # results
 *.png
+!Figures/thumbnail.png
 *.pdf
 *.eps
 *.jpg
