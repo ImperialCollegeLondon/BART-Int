@@ -98,7 +98,7 @@ for (num_cv in num_cv_start:num_cv_end) {
   dummyFullData <- dummyVars("~.", data = rbind(trainX, candidateX))
   trainX <- data.frame(predict(dummyFullData, newdata = trainX))
   candidateX <- data.frame(predict(dummyFullData, newdata = candidateX))
-  # compute population average income estimates by BARTBQ
+  # compute population average income estimates by BARTInt
   t0 <- proc.time()
   BARTresults <- computeBART(trainX.num, trainX, trainY, candidateX.num, candidateX, candidateY, num_iterations = num_new_surveys, save_posterior = TRUE, num_cv = num_cv)
   t1 <- proc.time()

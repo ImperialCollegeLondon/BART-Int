@@ -100,11 +100,11 @@ for (num_cv in 1:20) {
   # set new seed
   set.seed(num_cv)
   cat("NUM_CV", num_cv, "\n")
-  # Bayesian Quadrature method
+  # BART-Int method
   # set number of new query points using sequential design
-  source("src/BARTBQ.R")
+  source("src/BARTInt.R")
   t0 <- proc.time()
-  predictionBART <- mainBARTBQ(dim, num_iterations, FUN = genz, trainX, trainY, sequential, measure, save_posterior = save_posterior, save_posterior_dir = "results/genz", save_posterior_filename = paste(genzFunctionName, num_cv, sep = "_"))
+  predictionBART <- mainBARTInt(dim, num_iterations, FUN = genz, trainX, trainY, sequential, measure, save_posterior = save_posterior, save_posterior_dir = "results/genz", save_posterior_filename = paste(genzFunctionName, num_cv, sep = "_"))
   t1 <- proc.time()
   bartTime <- (t1 - t0)[[1]]
 

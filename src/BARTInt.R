@@ -149,7 +149,7 @@ singleTreeSum <- function(treeNum, model, drawNum, dim, measure)
 {
   cutPoints <- dbarts:::createCutPoints(model$fit)
   cut <- array(c(0, 1), c(2, dim))
-  
+
   if (measure %in% c("exponential")) {
     cut <- array(c(0, Inf), c(2, dim))
   }
@@ -222,9 +222,9 @@ sampleIntegrals <- function(model, dim, measure)
   return(integrals)
 }
 
-BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequential, measure, save_posterior = FALSE, save_posterior_dir = "results/genz", save_posterior_filename = "default")
+BARTInt <- function(dim, trainX, trainY, numNewTraining, FUN, sequential, measure, save_posterior = FALSE, save_posterior_dir = "results/genz", save_posterior_filename = "default")
 
-#'BART-BQ with Sequential Design
+#'BART-Int with Sequential Design
 #' 
 #'@description This function approxiamtes the integration of target function using
 #'BART and Sequential Design.
@@ -253,7 +253,7 @@ BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequentia
   sink("/dev/null")
   # model <- bart(trainData[,1:dim], trainData[,dim+1], keeptrees=TRUE, keepevery=5L, nskip=500, ndpost=1500, ntree=50, k = 2)
   # sigest = 0.0001 ensures that there is almost no noise
-  model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 10000, ntree = 50, k = 2, sigest=0.1)
+  model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 10000, ntree = 50, k = 2, sigest = 0.1)
   sink()
   # obtain posterior samples
   integrals <- sampleIntegrals(model, dim, measure)
@@ -279,7 +279,7 @@ BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequentia
     # first build BART and scale mean and standard deviation
     sink("/dev/null")
     # sigest = 0.0001 ensures that there is almost no noise
-    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 50, k = 2, sigest=0.1)
+    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 50, k = 2, sigest = 0.1)
     # model <- bart(trainData[,1:dim], trainData[,dim+1], keeptrees=TRUE, keepevery=5L, nskip=500, ndpost=1500, ntree=50, k = 2)
     # model <- bart(trainData[,1:dim], trainData[,dim+1], keeptrees=TRUE, keepevery=20L, nskip=1000, ndpost=2000)
     # model <- bart(trainData[,1:dim], trainData[,dim+1], keeptrees=TRUE, keepevery=20L, nskip=1000, ndpost=10000, ntree=50, k = 2)
@@ -302,7 +302,7 @@ BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequentia
       weights <- 1
     } else if (measure == "gaussian") {
       candidateSet <- replicate(dim, rtnorm(candidateSetNum, mean = 0.5, lower = 0, upper = 1))
-      weights <- dtnorm(candidateSet, mean=0.5, lower = 0, upper = 1)
+      weights <- dtnorm(candidateSet, mean = 0.5, lower = 0, upper = 1)
     } else if (measure == "exponential") {
       candidateSet <- replicate(dim, rexp(candidateSetNum))
       weights <- colMeans(dexp(candidateSet))
@@ -328,7 +328,7 @@ BARTBQSequential <- function(dim, trainX, trainY, numNewTraining, FUN, sequentia
 
 BART_posterior <- function(dim, trainX, trainY, numNewTraining, FUN, sequential, measure = "uniform")
 
-#'BART-BQ with Sequential Design
+#'BART-Int with Sequential Design
 #' 
 #'@description This function approxiamtes the integration of target function using
 #'BART and Sequential Design.
@@ -360,7 +360,7 @@ BART_posterior <- function(dim, trainX, trainY, numNewTraining, FUN, sequential,
     sink("/dev/null")
     # sigest = 0.0001 ensures that there is almost no noise
     # model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 200, k = 2, sigest=0.1)
-    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 50, k = 2, sigest=0.1)
+    model <- bart(trainData[, 1:dim], trainData[, dim + 1], keeptrees = TRUE, keepevery = 5L, nskip = 1000, ndpost = 5000, ntree = 50, k = 2, sigest = 0.1)
     sink()
     # obtain posterior samples
     integrals <- sampleIntegrals(model, dim, measure)
@@ -395,9 +395,9 @@ BART_posterior <- function(dim, trainX, trainY, numNewTraining, FUN, sequential,
   return(list("model" = model, "trainData" = trainData))
 }
 
-mainBARTBQ <- function(dim, num_iterations, FUN, trainX, trainY, sequential = TRUE, measure = "uniform", save_posterior = FALSE, save_posterior_dir = "results/genz", save_posterior_filename = "default")
+mainBARTInt <- function(dim, num_iterations, FUN, trainX, trainY, sequential = TRUE, measure = "uniform", save_posterior = FALSE, save_posterior_dir = "results/genz", save_posterior_filename = "default")
 
-#'BART-BQ with Sequential Design
+#'BART-Int with Sequential Design
 #' 
 #'@description This function approxiamtes the integration of target function using
 #'BART and Sequential Design.
@@ -416,7 +416,7 @@ mainBARTBQ <- function(dim, num_iterations, FUN, trainX, trainY, sequential = TR
   # prepare training data and parameters
   genz <- FUN #select genz function
   numNewTraining <- num_iterations
-  prediction <- BARTBQSequential(dim, trainX, trainY, numNewTraining, FUN = genz, sequential, measure, save_posterior = save_posterior, save_posterior_dir = save_posterior_dir, save_posterior_filename = save_posterior_filename)
+  prediction <- BARTInt(dim, trainX, trainY, numNewTraining, FUN = genz, sequential, measure, save_posterior = save_posterior, save_posterior_dir = save_posterior_dir, save_posterior_filename = save_posterior_filename)
 
   return(prediction)
 }
